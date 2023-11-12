@@ -1,0 +1,174 @@
+#:kivy 2.2.0
+# App: Particle Distortion Analysis
+# Author: Haig Bishop
+
+#:set GREY (64/255, 65/255, 79/255, 1)
+#:set LIGHT_GREY (128/255, 130/255, 158/255, 1)
+#:set DARK_GREY (32/255, 33/255, 35/255, 1)
+#:set GREY_BLUE (60/255, 77/255, 109/255, 1)
+#:set BLUE_GREY_BLUE (75/255, 100/255, 153/255, 1)
+#:set BLUE (96/255, 145/255, 246/255, 1)
+#:set TANGY (252/255, 252/255, 239/255, 1)
+#:set CLEAR (0, 0, 0, 0)
+#:set WHITE (1,1,1,1)
+
+
+# =========================================================================================
+
+WindowManager:
+    MainWindow:
+
+
+
+
+
+
+
+
+# =========================================================================================
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# =========================================================================================
+
+<MainWindow>:
+    name: 'main'
+    # Main split
+    GridLayout:
+        id: main_grid
+        rows: 2
+        # Title / (i) split
+        GridLayout:
+            id: top_grid
+            orientation: 'rl-tb'
+            size_hint_y: None
+            height: 140
+            cols: 2
+            FloatLayout:
+                size_hint: None, None
+                size: top_grid.height, top_grid.height
+                # Info button
+                Button:
+                    background_color: 0, 0, 0, 0
+                    background_normal: ''
+                    background_down: ''
+                    size_hint_y: None
+                    size_hint_x: None
+                    pos: (top_grid.x + top_grid.width - self.width - 20, top_grid.y + top_grid.height - self.height - 20)
+                    size: (50, 50)
+            # Title / subtitle split
+            GridLayout:
+                rows: 2
+                size_hint_y: 1
+                size_hint_x: None
+                width: main_grid.width - self.height
+                FloatLayout:
+                    size_hint_y: 0.6
+                    size_hint_x: 1
+                    # Title
+                    Label:
+                        id: title_label
+                        text: 'Particle Distortion Analysis'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 64
+                        padding: [20, 0]
+                        size_hint: None, None
+                        size: self.texture_size
+                        valign: 'bottom'
+                        halign: 'left'
+                        pos_hint: {'x': 0, 'y': 0}
+                    # version
+                    Label:
+                        text: 'v0.1'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 36
+                        padding: [10, 0]
+                        size_hint: None, None
+                        size: self.texture_size
+                        valign: 'bottom'
+                        halign: 'left'
+                        pos_hint: {'y': 0.1}
+                        x: title_label.x + title_label.width
+                # Subtitle
+                Label:
+                    text: ' Haig Bishop,  hbi34@uclive.ac.nz,  University of Canterbury'
+                    font_name: 'resources\\Inter.ttf'
+                    font_size: 18
+                    padding: [20, 0]
+                    size_hint_x: 1
+                    size_hint_y: 0.35
+                    halign: 'left'
+                    valign: 'center'
+                    text_size: self.size
+        # Options / image split
+        GridLayout:
+            size_hint_y: 1
+            cols: 3
+            FloatLayout:
+                size_hint_x: None
+                width: 20
+            # Options x 4
+            GridLayout:
+                rows: 4
+                size_hint_x: 0.7
+                # Button wrapper
+                FloatLayout:
+                    size_hint_y: 0.25
+                    TangyButton:
+                        id: btn_ip
+                        font_name: 'resources\\Inter.ttf'
+                        text: 'Track Distortion' # 'Images → Distortion'
+                        font_size:52
+                        size_hint: (1, 0.9)
+                        font_name: 'resources\\Inter.ttf'
+                        pos_hint: {'right': 1, 'top':1}
+                FloatLayout:
+                    size_hint_y: 0.25
+                    TangyButton:
+                        id: btn_ps
+                        font_name: 'resources\\Inter.ttf'
+                        font_size:52
+                        text: 'Import Ion Current Data' # '...'
+                        size_hint: (1, 0.9)
+                        pos_hint: {'right': 1, 'top':1}
+                FloatLayout:
+                    size_hint_y: 0.25
+                    TangyButton:
+                        id: btn_pf
+                        font_name: 'resources\\Inter.ttf'
+                        text: 'Calculate Forces' # 'Distortion → Force'
+                        font_size:52
+                        size_hint: (1, 0.9)
+                        pos_hint: {'right': 1, 'top':1}
+                FloatLayout:
+                    size_hint_y: 0.25
+                    TangyButton:
+                        id: btn_fg
+                        font_name: 'resources\\Inter.ttf'
+                        font_size:52
+                        text: 'Generate Plots' # 'Force → Plots'
+                        size_hint: (1, 0.9)
+                        pos_hint: {'right': 1, 'top':1}
+            # Image container
+            FloatLayout:
+                size_hint_x: 0.3
+                Image:
+                    size_hint: (0.9, 0.975)
+                    pos_hint: {'center_x':0.5, 'top':1}
+                    fit_mode: 'cover'
+                    source: 'resources\\example_image.png'
+
+
+# =========================================================================================
+
+<TangyButton@Button>:
+    background_normal: ''
+    background_color: CLEAR
+    background_down: ''
+    border: CLEAR
+    color: DARK_GREY
+    canvas.before:
+        Color:
+            rgba: (self.state == 'normal' and self.disabled == False) and TANGY or GREY
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10,]
