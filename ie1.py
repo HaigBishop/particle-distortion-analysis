@@ -10,19 +10,17 @@ from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
+from kivy.properties import BooleanProperty
 
 # Import modules for dealing with files
-from os.path import getctime
-from datetime import datetime
-import os
-import re
 from subprocess import Popen as p_open
 from plyer import filechooser
-
+from cv2 import flip
 
 # Import local modules
 from popup_elements import BackPopup
 from jobs import Experiment
+from file_management import is_video_file, kivify_image
 
 class IE1Window(Screen):
     """position -> force screen"""
@@ -39,12 +37,12 @@ class IE1Window(Screen):
         starts the detection process"""
         pass
 
-    def select_files(self):
-        """called when [select file(s)] button is pressed
+    def select_vid_files(self):
+        """called when [select video file(s)] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
         # Only allow selection of TDMS
-        filters = [("TDMS files", "*.tdms")]
+        filters = [("AVI files", "*.avi")]
         # Open folder selector window - send selection to self.selected
         filechooser.open_file(
             on_selection=self.selected, 
@@ -53,38 +51,111 @@ class IE1Window(Screen):
             multiple=True
         )
 
+    def select_ion_file(self):
+        """called when [select ion current file] button is pressed
+        - opens the file select window
+        - selection is sent to self.selected()"""
+        # Only allow selection of TDMS
+        filters = [("TDMS files", "*.tdms")]
+        # Open folder selector window - send selection to self.selected
+        filechooser.open_file(
+            on_selection=self.ion_selected, 
+            title="Select file(s)", 
+            filters=filters,
+            multiple=True
+        )
+
+    def ion_selected(self, selection):
+        pass
+
     def selected(self, selection):
         """receives selection from selector window
         - checks if the selections are valid
         - if they are it adds them as experiments
         - if any are not valid it will display an error string"""
+        # Set booleans to test if selection is valid
+        no_valid, duplicate, invalid_type = True, False, False
         for file_loc in selection:
-            # Create a experiment object
-            new_experiment = Experiment(file_loc)
+            # If is is a genuine selection of valid type
+            if is_video_file(file_loc):
+                # If it doesn't already exist
+                if not self.app.duplicate_experiment(file_loc):
+                    # Create a experiment object
+                    new_experiment = Experiment(file_loc)
+                    # Add to the list
+                    self.app.add_experiment(new_experiment)
+                    # Create the accompanying list box
+                    new_exp_box = ExperimentBox(new_experiment, self)
+                    self.exp_scroll.grid_layout.add_widget(new_exp_box)
+                    no_valid = False
+                # It is a duplicate!
+                else:
+                    duplicate = True
+            # It is invalid type!
+            else:
+                invalid_type = True
+        # If none are valid
+        if no_valid:
+            # Deselect any jobs, update location label
+            self.app.deselect_all_experiments()
+            # Disable layouts
+            self.param_grid_layout.disabled = True
+            self.name_grid_layout.disabled = True
+        else:
+            # Set the last experiment added as the current job
+            self.app.select_experiment(new_experiment)
+            # Enable layouts
+            self.param_grid_layout.disabled = False
+            self.name_grid_layout.disabled = False
+        # Update everything visually
+        self.update_fields()
+        # If there was a failed selection
+        if duplicate or invalid_type:
+            # Make an error string describing the issue
+            error_string = ""
+            if duplicate == True:
+                # Update error string
+                error_string += "File duplicate(s)  "
+            if invalid_type == True:
+                # Update error string
+                error_string += "Incorrect file type(s)"
+            # Update location label
+            self.location_label.text = error_string
 
     def update_fields(self):
         """updates the text inputs and the 'location label'
         - new values are determined by the current experiment"""
         # If there is a current experiment
-        current = self.app.current_experiment()
+        current = self.app.current_experiment
         if current is not None:
             # Update with current experiment's values
             self.location_label.text = str(current.vid_loc)
             self.name_input.text = str(current.name)
+            self.update_image_preview()
         else:
             # Reset with defaults
-            self.location_label.text = "No file(s) selected"
+            self.location_label.text = "No experiment selected"
             self.name_input.text = ""
+            self.image_widget.texture = None
 
     def on_name_text(self, text):
         """called when name text input is changed
         - takes the new text
         - updates the current experiment if there is one"""
         # If there is a current experiment
-        current = self.app.current_experiment()
+        current = self.app.current_experiment
         if current is not None:
             # Update the experiment's name
             current.name = text
+
+    def update_image_preview(self):
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Get the first frame and flip for Kivy
+            image = flip(current.first_frame, 0)
+            # Convert the image to a format useable for Kivy
+            self.image_widget.texture = kivify_image(image)
 
     def on_back_btn(self):
         """called by back btn
@@ -103,7 +174,7 @@ class IE1Window(Screen):
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
 
-    def _on_file_drop(self, file_path, x, y):
+    def _on_file_drop(self, file_path):
         """called when a file is dropped on this screen
         - sends the file path to the selected method"""
         self.selected([file_path])
@@ -114,32 +185,59 @@ class ExperimentList(ScrollView):
 
     def __init__(self, **kwargs):
         """init method for the scrolling widget in IE1"""
+        # Save app as an attribute
+        self.app = App.get_running_app()
         # Call ScrollView init method
         super(ExperimentList, self).__init__(**kwargs)
 
+    def clear_list(self):
+        # Disabled layouts
+        self.window.param_grid_layout.disabled = True
+        self.window.name_grid_layout.disabled = True
+        # While there are still jobs
+        while len(self.grid_layout.children) != 0:
+            # Remove the first job
+            self.grid_layout.remove_widget(self.grid_layout.children[0])
+        # clear experiment objects
+        self.app.experiments.clear()
+        # Update visual stuff
+        self.window.update_fields()
+
     def on_x_btn(self, box):
-        """called when an x button on a box is pressed or using clear_experiments
+        """called when an x button on a box is pressed
         - disables the layouts because there is nothing selected now
         - removes the experiments
         - updates visuals"""
         # Disabled layouts
-        self.ie1_window.param_grid_layout.disabled = True
-        self.ie1_window.name_grid_layout.disabled = True
+        self.window.param_grid_layout.disabled = True
+        self.window.name_grid_layout.disabled = True
         # Remove that experiment
         self.grid_layout.remove_widget(box)
         # Update current experiment to none
-        self.app.deselect_all_experiments()
+        self.app.remove_experiment(box.experiment)
         # Update visual stuff
-        self.ie1_window.update_fields()
-        self.ie1_window.update_experiment_selected()
+        self.window.update_fields()
+
+    def on_current_experiment(self, instance, current_experiment):
+        # For every box
+        for exp_box in self.grid_layout.children:
+            # If not selected
+            if exp_box.experiment != current_experiment:
+                exp_box.is_selected = False
+            # If selected
+            else:
+                exp_box.is_selected = True
+
 
 
 class ExperimentBox(Button):
     """experiment widget on the IE1ScrollView widget"""
+    is_selected = BooleanProperty(False)
 
-    def __init__(self, experiment, **kwargs):
+    def __init__(self, experiment, window, **kwargs):
         """init method for experiment boxes on a experiment list scrollview"""
         self.experiment = experiment
+        self.window = window
         # Save app as an attribute
         self.app = App.get_running_app()
         # Call Button init method
@@ -152,13 +250,12 @@ class ExperimentBox(Button):
         - updates visuals
         - scrolls textboxes back to the start"""
         # This is now the current experiment
-        self.experiment.is_current = True
+        self.app.select_experiment(self.experiment)
         # Enable layouts
-        self.ie1_window.param_grid_layout.disabled = False
-        self.ie1_window.name_grid_layout.disabled = False
+        self.window.param_grid_layout.disabled = False
+        self.window.name_grid_layout.disabled = False
         # Update the visuals
-        self.ie1_window.update_fields()
-        self.ie1_window.update_experiment_selected()
+        self.window.update_fields()
 
     def on_open_btn(self):
         """Called by button on experiment box

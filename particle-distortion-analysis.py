@@ -1,16 +1,14 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.1)
+Program: Particle Deformation Analysis (Version 0.1.2)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 15/11/2023
+Date: 16/11/2023
 Version Description:
-- Added Import experiment page (incomplete)
-- Changes to experiments list
+- Fleshed out experiment related properties
+- add ion select button and video preview
+- Added help screen
 """
-
-# Import os and sys
-import os
 
 # Stops debug messages - alsoprevents an error after .exe packaging
 # os.environ["KIVY_NO_CONSOLELOG"] = "1"
@@ -38,7 +36,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 from kivy.core.window import Keyboard
 from kivy.uix.screenmanager import SlideTransition
-from kivy.properties import ListProperty
+from kivy.properties import ListProperty, ObjectProperty
 
 # Import local modules
 from ie1 import *
@@ -46,6 +44,9 @@ from ie1 import *
 # Set background colour to grey
 DARK_GREY = (32 / 255, 33 / 255, 35 / 255, 1)
 Window.clearcolor = DARK_GREY
+
+# Info page text
+INFO_FILE_POS = "resources\\info_page_text.txt"
 
 
 class WindowManager(ScreenManager):
@@ -57,8 +58,6 @@ class WindowManager(ScreenManager):
         self.transition = SlideTransition()
         # Call ScreenManager init method
         super(ScreenManager, self).__init__(**kwargs)
-        # Save a reference to the app object
-        self.app = App.get_running_app()
 
 
 class MainWindow(Screen):
@@ -68,8 +67,27 @@ class MainWindow(Screen):
         """init method for the main menu"""
         # Call Screen init method
         super(MainWindow, self).__init__(**kwargs)
+        # Read the info page text file
+        with open(INFO_FILE_POS, "r", encoding="utf8") as file:
+            self.info_text = file.read()
         # Get app reference
         self.app = App.get_running_app()
+
+    def toggle_info(self):
+        """Toggles the info screen on/off"""
+        # If off
+        if self.info_layout.disabled:
+            # Turn on
+            self.info_layout.disabled = False
+            self.info_layout.pos = (0, 0)
+            self.main_grid.disabled = True
+        # If on
+        else:
+            # Turn off
+            self.info_layout.disabled = True
+            self.info_layout.pos = (99999, 99999)  # Sends it far away
+            self.main_grid.disabled = False
+            self.help_scroll.scroll_y = 1  # Resets the scroll
 
 
 class PDAApp(App):
@@ -78,16 +96,15 @@ class PDAApp(App):
     # Initialise list of experiments
     experiments = ListProperty([])
     events = ListProperty([])
+    # This holds the current experiment
+    current_experiment = ObjectProperty(None, allownone=True)
 
     def build(self):
         """initialises the app"""
         # Label window
         self.title = "Particle Deformation Analysis"
-        # Get a reference to the app
-        self.app = App.get_running_app()
-        self.experiments = []
         # Get references to the screens needed
-        self.ie1_window = self.app.root.get_screen("IE1")
+        self.ie1_window = self.root.get_screen("IE1")
         # Bind the file drop call
         Window.bind(on_drop_file=self._on_file_drop)
 
@@ -95,44 +112,63 @@ class PDAApp(App):
         """called when a file is drag & dropped on the app window"""
         # Get the file path decoded
         file_path = file_path.decode("utf-8")
-        # Send the path to one of these 4 windows if they are open
-        if self.app.root.current == "IE1":
-            self.ie1_window._on_file_drop(file_path, x, y)
-
-    def on_experiments(self, _instance, _experiments):
-        # ?
-        pass
+        current_screen = self.root.current
+        # If on a screen that has file drop
+        if current_screen == "IE1":
+            # Send to that screen
+            screen = self.root.get_screen(current_screen)
+            screen._on_file_drop(file_path)
     
-    def current_experiment(self):
-        """Returns the experiment currently selected. If no experiment is selected return None."""
-        current = None
-        # For every experiment
-        for experiment in self.experiments:
-            # If this is the current experiment, break loop and return experiment
-            if experiment.is_selected:
-                current = experiment
-                break
-        return current
+    def on_current_experiment(self, instance, current_experiment):
+        """Called when the current experiment changes.
+        Calls on_current_experiment if the current screen has this method."""
+        # If on a screen with an experiments list
+        current_screen = self.root.current
+        if current_screen == "IE1":
+            # Call on_current_experiment for that exp list scrollview
+            screen = self.root.get_screen(current_screen)
+            screen.exp_scroll.on_current_experiment(instance, current_experiment)
+    
+    def remove_experiment(self, experiment):
+        """Removes an experiment and deselects it if selected"""
+        # If selected
+        if self.current_experiment == experiment:
+            # Deselect
+            self.current_experiment = None
+        # Remove from list
+        self.experiments.remove(experiment)
+    
+    def add_experiment(self, experiment):
+        """Adds an experiment"""
+        self.experiments.append(experiment)
+
+    def select_experiment(self, experiment):
+        """Selects and experiment"""
+        # If it is in the list
+        if experiment in self.experiments:
+            # Set as current
+            self.current_experiment = experiment
     
     def deselect_all_experiments(self):
-        """Deselects all experiments - sets is_selected = False"""
-        # For every experiment
-        for experiment in self.experiments:
-            # If this is the current experiment, break loop and return experiment
-            experiment.is_selected = False
+        """Deselects all experiments"""
+        # Deselect
+        self.current_experiment = None
 
-    def non_duplicate_experiment(self, vid_loc):
-        duplicate = False
-        # For every experiment
-        for experiment in self.experiments:
-            # If this is the current experiment, break loop and return experiment
-            if experiment.vid_loc == vid_loc:
-                duplicate = True
-                break
-        return duplicate
+    def duplicate_experiment(self, vid_loc):
+        """Returns True if the given video file is in the experiment list."""
+        return vid_loc in [exp.vid_loc for exp in self.experiments]
     
     def clear_experiments(self):
-        self.experiments = []
+        """Clears all experiments and experiment boxes from the current screen."""
+        # If on a screen with an experiments list
+        current_screen = self.root.current
+        if current_screen == "IE1":
+            # Get that screen's exp_scroll
+            exp_scroll = self.root.get_screen(current_screen).exp_scroll
+            # Clear both lists
+            exp_scroll.clear_list()
+            # Deselect
+            self.current_experiment = None
 
 
 # If this is the main python file

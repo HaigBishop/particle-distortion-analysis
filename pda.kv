@@ -2,13 +2,13 @@
 # App: Particle Deformation Analysis
 # Author: Haig Bishop
 
-#:set GREY (64/255, 65/255, 79/255, 1)
 #:set LIGHT_GREY (128/255, 130/255, 158/255, 1)
 #:set DARK_GREY (32/255, 33/255, 35/255, 1)
 #:set GREY_BLUE (60/255, 77/255, 109/255, 1)
 #:set BLUE_GREY_BLUE (75/255, 100/255, 153/255, 1)
 #:set BLUE (96/255, 145/255, 246/255, 1)
-#:set TANGY (252/255, 252/255, 239/255, 1)
+#:set OFFWHITE (252/255, 252/255, 239/255, 1)
+#:set GREY (62/255, 62/255, 59/255, 1)
 #:set CLEAR (0, 0, 0, 0)
 #:set WHITE (1,1,1,1)
 
@@ -32,6 +32,9 @@ WindowManager:
 
 <MainWindow>:
     name: 'main'
+    info_layout: info_layout
+    main_grid: main_grid
+    help_scroll: help_scroll
     # Main split
     GridLayout:
         id: main_grid
@@ -51,10 +54,22 @@ WindowManager:
                     background_color: 0, 0, 0, 0
                     background_normal: ''
                     background_down: ''
+                    color: 1, 1, 1, 1
+                    font_size: 30
+                    text: '[b]i[/b]'
+                    markup: True
                     size_hint_y: None
                     size_hint_x: None
                     pos: (top_grid.x + top_grid.width - self.width - 20, top_grid.y + top_grid.height - self.height - 20)
                     size: (50, 50)
+                    on_press: root.toggle_info()
+                    canvas.before:
+                        Color:
+                            rgba: main_grid.disabled and (98/255, 99/255, 101/255, 1) or (1, 1, 1, 1)
+                        Line:
+                            width: 1.5
+                            circle:
+                                (self.center_x, self.center_y, self.width/2, 0, 360)
             # Title / subtitle split
             GridLayout:
                 rows: 2
@@ -119,7 +134,6 @@ WindowManager:
                         text: 'Import Experiments' # 'Images → Deformation'
                         font_size:48
                         size_hint: (1, 0.9)
-                        font_name: 'resources\\Inter.ttf'
                         pos_hint: {'right': 1, 'top':1}
                         on_release: 
                             app.root.current = 'IE1'
@@ -159,6 +173,57 @@ WindowManager:
                     pos_hint: {'center_x':0.5, 'top':1}
                     fit_mode: 'cover'
                     source: 'resources\\example_image.png'
+    # Whole screen float for the info screen
+    FloatLayout:
+        id: info_layout
+        disabled: True
+        opacity: 0 if self.disabled else 1
+        pos: (99999, 99999)
+        Button:
+            background_color: 0, 0, 0, 0
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            size_hint: 1, 1
+            on_press: root.toggle_info()
+        FloatLayout:
+            id: info_sublayout
+            pos_hint: {'center_x':0.5, 'center_y':0.5}
+            size_hint: 0.9, 0.9
+            canvas.before:
+                Color:
+                    rgba: DARK_GREY
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+                Color:
+                    rgba: WHITE
+                Line:
+                    width: 1.
+                    rectangle: (self.x, self.y, self.width, self.height)
+            ScrollView:
+                id: help_scroll
+                pos: (info_sublayout.x + 18, info_sublayout.y)
+                size_hint: None, None
+                size: (info_sublayout.width - 18, info_sublayout.height - 12)
+                bar_pos_y: 'right'
+                do_scroll_x: False
+                do_scroll_y: True
+                GridLayout:
+                    id: grid
+                    size_hint: None, None
+                    width: help_scroll.width
+                    height: max(self.minimum_height, help_scroll.height)
+                    cols: 1
+                    spacing: 5
+                    Label:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: root.info_text
+                        color: WHITE
+                        padding: [30, 30]
+                        markup: True
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 24
+
 
 
 
@@ -172,11 +237,12 @@ WindowManager:
     name: 'IE1'
     id: ie1_window
     exp_scroll: exp_scroll
-    select_btn: select_btn
+    select_vid_btn: select_vid_btn
     location_label: location_label
     param_grid_layout: param_grid_layout
     name_grid_layout: name_grid_layout
     name_input: name_input
+    image_widget: image_widget
     GridLayout:
         canvas:
             Color:
@@ -227,14 +293,14 @@ WindowManager:
                 FloatLayout:
                     size_hint_y: 0.2
                     TangyButton:
-                        id: select_btn
+                        id: select_vid_btn
                         size_hint:(None,None)
                         font_name: 'resources\\Inter.ttf'
                         size: (160,50)
                         font_size: 18
                         pos_hint: {'x':.095, 'y':.3}
-                        text:'select files(s)'
-                        on_release: root.select_files()
+                        text:'select video(s)'
+                        on_release: root.select_vid_files()
                     Label:
                         id: location_label
                         color: WHITE
@@ -251,10 +317,10 @@ WindowManager:
                         id: name_grid_layout
                         disabled: True
                         cols: 2
-                        size_hint:(.64, 1)
-                        pos_hint: {'x':.36, 'y':0}
+                        size_hint:(.69, 1)
+                        pos_hint: {'x':.30, 'y':0}
                         Label:
-                            text: 'Name:'
+                            text: 'Experiment Name:'
                             color: WHITE
                             font_name: 'resources\\Inter.ttf'
                             font_size: 24
@@ -275,11 +341,55 @@ WindowManager:
                     disabled: True
                     cols: 2
                     size_hint_y: 0.8
-                    GridLayout:
-                        size_hint_x: 0.45
-                        rows: 7
                     FloatLayout:
-                        size_hint_x: 0.55
+                        id: ion_select_layout
+                        size_hint_x: 0.5
+                        rows: 2
+                        TangyButton:
+                            id: ion_select_btn
+                            size_hint:(None,None)
+                            size: (200, 50)
+                            disabled_color: DARK_GREY
+                            font_size: 18
+                            pos_hint: {'x':.06, 'y':.8}
+                            text:'select ion current file'
+                            on_release: root.select_ion_file()
+                            font_name: 'resources\\Inter.ttf'
+                        Button:
+                            text: '×'
+                            font_size: 32
+                            background_color: CLEAR
+                            background_normal: ''
+                            color: WHITE
+                            disabled: True if ion_file_location_label.text == 'No file selected' else False
+                            size_hint: (None, None)
+                            size: (30, 30)
+                            pos_hint: {'x':.052, 'y':.71}
+                        Label:
+                            id: ion_file_location_label
+                            color: WHITE
+                            size_hint:(None,None)
+                            size: (ion_select_layout.width - 30,50)
+                            pos_hint: {'x':.12, 'y':0.72}
+                            text: 'No file selected'
+                            halign: 'left'
+                            font_name: 'resources\\Inter.ttf'
+                            text_size: self.size
+                            shorten: True
+                            font_size: 16
+                    GridLayout:
+                        size_hint_x: 0.5
+                        rows: 2
+                        Label:
+                            font_name: 'resources\\Inter.ttf'
+                            text: 'Video Preview'
+                            font_size: 32
+                            size_hint: (1, 0.2)
+                        Image:
+                            id: image_widget
+                            size_hint: (1, 0.8)
+                            fit_mode: 'contain'
+                            color: CLEAR if self.texture is None else WHITE
         FloatLayout:
             size_hint_x: 0.02
         GridLayout:
@@ -297,7 +407,7 @@ WindowManager:
                 valign: 'center'
             ExperimentList:
                 id: exp_scroll
-                ie1_window: ie1_window
+                window: ie1_window
                 size_hint:(None,None)
                 height: right_grid.height - 120
                 width: right_grid.width-6
@@ -322,7 +432,7 @@ WindowManager:
 
 <BackPopup>:
     size_hint: 0.6, 0.4
-    title: 'Return to Main Menu and lose all progress' if self.screen == 'main' else 'No prompt written yet!'
+    title: 'Return to Main Menu and lose all progress' if self.screen_id == 'main' else 'No prompt written yet!'
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -351,7 +461,7 @@ WindowManager:
     color: DARK_GREY
     canvas.before:
         Color:
-            rgba: (self.state == 'normal' and self.disabled == False) and TANGY or GREY
+            rgba: (self.state == 'normal' and self.disabled == False) and OFFWHITE or GREY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -365,7 +475,7 @@ WindowManager:
     background_color: CLEAR
     background_down: ''
     border: CLEAR
-    color: BLUE
+    color: OFFWHITE
     canvas.before:
         Color:
             rgba: (self.state == 'normal') and CLEAR or GREY
@@ -389,3 +499,78 @@ WindowManager:
         height: max(self.minimum_height,root.height)
         cols: 1
         spacing: 5
+
+        
+# =========================================================================================
+
+<ExperimentBox>:
+    size_hint_x: 1
+    size_hint_y: None
+    height: 100
+    name: 'temp'
+    date: None
+    file_location: None
+    background_normal: ''
+    background_normal: ''
+    background_color: CLEAR
+    background_down: ''
+    border: CLEAR
+    font_name: 'resources\\Inter.ttf'
+    canvas.before:
+        Color:
+            rgba: self.is_selected and OFFWHITE or GREY
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12,]
+    Label:
+        text: 'Name:  ' + str(root.experiment.name)
+        color: WHITE
+        size_hint: (None, None)
+        size: (root.width - 35, 30)
+        pos: (root.x + 5, root.y + 70)
+        halign: 'left'
+        color: DARK_GREY
+        text_size: self.size
+        shorten: True
+    Label:
+        text: 'File:  ' + str(root.experiment.vid_loc).split('\\')[-1].split('/')[-1]
+        color: WHITE
+        size_hint: (None, None)
+        size: (root.width, 30)
+        pos: (root.x + 5, root.y + 40)
+        halign: 'left'
+        color: DARK_GREY
+        text_size: self.size
+        shorten: True
+    Label:
+        text: 'Date:  ' + str(root.experiment.vid_date)
+        color: WHITE
+        size_hint: (None, None)
+        size: (root.width, 30)
+        pos: (root.x + 5, root.y + 10)
+        halign: 'left'
+        color: DARK_GREY
+        text_size: self.size
+        shorten: True
+    Button:
+        text: '×'
+        font_size: 24
+        background_color: CLEAR
+        background_normal: ''
+        color: DARK_GREY
+        size_hint: (None, None)
+        size: (30, 30)
+        pos: (root.x + root.width - 30, root.y + root.height - 30)
+        on_press: root.parent.parent.on_x_btn(root)
+    Button:
+        background_color: CLEAR
+        size_hint: (None, None)
+        size: (20, 30)
+        pos: (root.x + root.width - 50, root.y + root.height - 30)
+        on_press: root.on_open_btn()
+        Image:
+            source: 'resources\\open_btn.png'
+            y: self.parent.y + 5
+            x: self.parent.x
+            size: (20, 20)

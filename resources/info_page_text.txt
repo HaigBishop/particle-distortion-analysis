@@ -1,0 +1,31 @@
+[size=52]Info Page[/size]
+
+[size=32]Application Description[/size]
+This application...
+
+[size=32]Import Experiments[/size]
+1.
+
+
+[size=32]Track Particle Deformation[/size]
+1.
+
+
+[size=32]Fit Deformation/Current Models[/size]
+1.
+
+
+[size=32]Predict Physical Properties[/size]
+1.
+
+
+[size=32]Keyboard Controls[/size]
+Z
+
+
+[size=32]Mouse Controls[/size]
+Left
+
+
+[size=32]Calculation Parameters[/size]
+X

@@ -12,10 +12,10 @@ from kivy.uix.popup import Popup
 class BackPopup(Popup):
     """A custom Popup object for going back a page"""
 
-    def __init__(self, screen, **kwargs):
+    def __init__(self, screen_id, **kwargs):
         """init method for BackPopup"""
         # The screen this popup will direct to
-        self.screen = screen
+        self.screen_id = screen_id
         # Call Popup init method
         super(BackPopup, self).__init__(**kwargs)
 
@@ -27,8 +27,10 @@ class BackPopup(Popup):
             app = App.get_running_app()
             # Empty the job list
             app.clear_experiments()
+            # Update the current screen
+            app.root.get_screen(app.root.current).update_fields()
             # Change screen
-            app.root.current = self.screen
+            app.root.current = self.screen_id
             app.root.transition.direction = "right"
             # Close popup
             self.dismiss()
