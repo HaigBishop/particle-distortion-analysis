@@ -1,5 +1,5 @@
 #:kivy 2.2.0
-# App: Particle Distortion Analysis
+# App: Particle Deformation Analysis
 # Author: Haig Bishop
 
 #:set GREY (64/255, 65/255, 79/255, 1)
@@ -17,6 +17,7 @@
 
 WindowManager:
     MainWindow:
+    IE1Window:
 
 
 
@@ -66,9 +67,9 @@ WindowManager:
                     # Title
                     Label:
                         id: title_label
-                        text: 'Particle Distortion Analysis'
+                        text: 'Particle Deformation Analysis'
                         font_name: 'resources\\Inter.ttf'
-                        font_size: 64
+                        font_size: 56
                         padding: [20, 0]
                         size_hint: None, None
                         size: self.texture_size
@@ -79,7 +80,7 @@ WindowManager:
                     Label:
                         text: 'v0.1'
                         font_name: 'resources\\Inter.ttf'
-                        font_size: 36
+                        font_size: 32
                         padding: [10, 0]
                         size_hint: None, None
                         size: self.texture_size
@@ -113,20 +114,23 @@ WindowManager:
                 FloatLayout:
                     size_hint_y: 0.25
                     TangyButton:
-                        id: btn_ip
+                        id: btn_IE
                         font_name: 'resources\\Inter.ttf'
-                        text: 'Track Distortion' # 'Images → Distortion'
-                        font_size:52
+                        text: 'Import Experiments' # 'Images → Deformation'
+                        font_size:48
                         size_hint: (1, 0.9)
                         font_name: 'resources\\Inter.ttf'
                         pos_hint: {'right': 1, 'top':1}
+                        on_release: 
+                            app.root.current = 'IE1'
+                            root.manager.transition.direction = 'left'
                 FloatLayout:
                     size_hint_y: 0.25
                     TangyButton:
                         id: btn_ps
                         font_name: 'resources\\Inter.ttf'
-                        font_size:52
-                        text: 'Import Ion Current Data' # '...'
+                        font_size:48
+                        text: 'Track Particle Deformation' # '...'
                         size_hint: (1, 0.9)
                         pos_hint: {'right': 1, 'top':1}
                 FloatLayout:
@@ -134,8 +138,8 @@ WindowManager:
                     TangyButton:
                         id: btn_pf
                         font_name: 'resources\\Inter.ttf'
-                        text: 'Calculate Forces' # 'Distortion → Force'
-                        font_size:52
+                        text: 'Fit Deformation/Current Models' # 'Deformation → Force'
+                        font_size:48
                         size_hint: (1, 0.9)
                         pos_hint: {'right': 1, 'top':1}
                 FloatLayout:
@@ -143,8 +147,8 @@ WindowManager:
                     TangyButton:
                         id: btn_fg
                         font_name: 'resources\\Inter.ttf'
-                        font_size:52
-                        text: 'Generate Plots' # 'Force → Plots'
+                        font_size:48
+                        text: 'Predict Physical Properties' # 'Force → Plots'
                         size_hint: (1, 0.9)
                         pos_hint: {'right': 1, 'top':1}
             # Image container
@@ -155,6 +159,186 @@ WindowManager:
                     pos_hint: {'center_x':0.5, 'top':1}
                     fit_mode: 'cover'
                     source: 'resources\\example_image.png'
+
+
+
+
+
+# =========================================================================================
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# =========================================================================================
+
+<IE1Window>:
+    name: 'IE1'
+    id: ie1_window
+    exp_scroll: exp_scroll
+    select_btn: select_btn
+    location_label: location_label
+    param_grid_layout: param_grid_layout
+    name_grid_layout: name_grid_layout
+    name_input: name_input
+    GridLayout:
+        canvas:
+            Color:
+                rgba: 1,1,1,0.1
+            Line:
+                points: [0, self.height - 60, self.width, self.height - 60]
+                width: 0.5
+            Line:
+                points: [self.width*0.75, self.height, self.width*0.75, 0]
+                width: 0.5
+            Color:
+                rgba: (42/255, 42/255, 45/255, 1)
+            Rectangle:
+                pos: (0,0)
+                size: (self.width*0.75, (self.height-80) * 0.79)
+        cols: 3
+        GridLayout:
+            rows: 2
+            size_hint_x: 0.74
+            GridLayout:
+                cols: 3
+                size_hint_y: None
+                height: 60
+                BlankButton:
+                    text:'←'
+                    font_name: 'resources\\Inter.ttf'
+                    font_size: 52
+                    padding: [0, 20]
+                    size_hint_x: None
+                    width: 120
+                    on_release: 
+                        root.on_back_btn()
+                Label:
+                    font_name: 'resources\\Inter.ttf'
+                    text: 'Import Experiments'
+                    font_size: 30
+                    padding: [5, 3]
+                    size_hint_x: None
+                    width: 700
+                    halign: 'left'
+                    valign: 'center'
+                    text_size: self.size
+                FloatLayout:
+                    size_hint_x: 1
+            GridLayout:
+                rows: 2
+                size_hint_y: 1
+                FloatLayout:
+                    size_hint_y: 0.2
+                    TangyButton:
+                        id: select_btn
+                        size_hint:(None,None)
+                        font_name: 'resources\\Inter.ttf'
+                        size: (160,50)
+                        font_size: 18
+                        pos_hint: {'x':.095, 'y':.3}
+                        text:'select files(s)'
+                        on_release: root.select_files()
+                    Label:
+                        id: location_label
+                        color: WHITE
+                        size_hint:(None,None)
+                        size: (self.parent.width * 0.8, 40)
+                        pos_hint: {'x':.1, 'y':0.06}
+                        text: 'No file(s) selected'
+                        halign: 'left'
+                        font_name: 'resources\\Inter.ttf'
+                        text_size: self.size
+                        shorten: True
+                        font_size: 16
+                    GridLayout:
+                        id: name_grid_layout
+                        disabled: True
+                        cols: 2
+                        size_hint:(.64, 1)
+                        pos_hint: {'x':.36, 'y':0}
+                        Label:
+                            text: 'Name:'
+                            color: WHITE
+                            font_name: 'resources\\Inter.ttf'
+                            font_size: 24
+                            size_hint_x: 0.35
+                        FloatLayout:
+                            size_hint_x: 0.6
+                            TextInput:
+                                id: name_input
+                                on_text: root.on_name_text(self.text)
+                                size_hint_x: 1
+                                size_hint_y: None
+                                pos_hint: {'x':0, 'center_y':.5}
+                                height: 40
+                                multiline: False
+                                text_align: 'justify'
+                GridLayout:
+                    id: param_grid_layout
+                    disabled: True
+                    cols: 2
+                    size_hint_y: 0.8
+                    GridLayout:
+                        size_hint_x: 0.45
+                        rows: 7
+                    FloatLayout:
+                        size_hint_x: 0.55
+        FloatLayout:
+            size_hint_x: 0.02
+        GridLayout:
+            id: right_grid
+            rows: 3
+            size_hint_x: 0.24
+            Label:
+                text:'Experiments'
+                size_hint_y: None
+                padding: [0, 45]
+                font_name: 'resources\\Inter.ttf'
+                color: WHITE
+                font_size: 28
+                height: 60
+                valign: 'center'
+            ExperimentList:
+                id: exp_scroll
+                ie1_window: ie1_window
+                size_hint:(None,None)
+                height: right_grid.height - 120
+                width: right_grid.width-6
+                bar_pos_y: 'right'
+                do_scroll_x: False
+                do_scroll_y: True
+            TangyButton:
+                disabled:  len(root.exp_scroll.grid_layout.children) == 0
+                disabled_color: DARK_GREY
+                text: 'Process Current Data'
+                size_hint:(None,None)
+                font_size: 22
+                font_name: 'resources\\Inter.ttf'
+                size: (right_grid.width-6, 52)
+                on_release: root.detect()
+
+
+
+
+
+# =========================================================================================
+
+<BackPopup>:
+    size_hint: 0.6, 0.4
+    title: 'Return to Main Menu and lose all progress' if self.screen == 'main' else 'No prompt written yet!'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Are you sure?'
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: 'Yes'
+                on_release: root.on_answer('yes')
+            Button:
+                text: 'No'
+                on_release: root.on_answer('no')
+
+
+
 
 
 # =========================================================================================
@@ -172,3 +356,36 @@ WindowManager:
             pos: self.pos
             size: self.size
             radius: [10,]
+
+
+# =========================================================================================
+
+<BlankButton@Button>:
+    background_normal: ''
+    background_color: CLEAR
+    background_down: ''
+    border: CLEAR
+    color: BLUE
+    canvas.before:
+        Color:
+            rgba: (self.state == 'normal') and CLEAR or GREY
+        RoundedRectangle:
+            pos: self.x+2, self.y+2
+            size: self.width-4, self.height-4
+            radius: [14,]
+
+
+
+
+
+# =========================================================================================
+
+<ExperimentList>:
+    size_hint: (1, 1)
+    grid_layout: grid
+    GridLayout:
+        id: grid
+        size_hint_y: None
+        height: max(self.minimum_height,root.height)
+        cols: 1
+        spacing: 5
