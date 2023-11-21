@@ -8,7 +8,6 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Import modules used for dealing with files
 from datetime import datetime
 import cv2
-import xml.etree.ElementTree as et
 import os
 import re
 import numpy as np

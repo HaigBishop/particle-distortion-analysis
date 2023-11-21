@@ -9,6 +9,7 @@ Version Description:
 - Ability to select ion files
 - Updated IE1 screen
 - New button with disabling function
+- Better code
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging

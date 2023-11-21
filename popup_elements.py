@@ -38,3 +38,15 @@ class BackPopup(Popup):
         else:
             # Close popup
             self.dismiss()
+
+
+class ErrorPopup(Popup):
+    """A custom Popup object for displaying an error screen
+    - this is just for invalid data
+    - the popup doesnt do anything, it just tells the user something"""
+
+    def on_answer(self, answer):
+        """called when user presses 'ok'"""
+        if answer == "ok":
+            # Close popup
+            self.dismiss()

@@ -9,7 +9,6 @@ from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.screenmanager import Screen
-from kivy.clock import Clock
 from kivy.properties import BooleanProperty
 
 # Import modules for dealing with files
@@ -18,7 +17,7 @@ from plyer import filechooser
 from cv2 import flip
 
 # Import local modules
-from popup_elements import BackPopup
+from popup_elements import BackPopup, ErrorPopup
 from jobs import Experiment
 from file_management import is_ion_file, is_video_file, kivify_image
 
@@ -33,10 +32,32 @@ class IE1Window(Screen):
         # Save app as an attribute
         self.app = App.get_running_app()
 
-    def detect(self):
-        """called by pressing the Detect button
-        starts the detection process"""
+    def on_process_ion(self):
+        """called by pressing the 'Process Current Data' button."""
         pass
+
+    def on_proceed_without(self):
+        """called by pressing the 'Proceed Without Current Data' button."""
+        # Check if the selected data is valid
+        vid_errors = self.check_vids()
+        # If there are issues with the data
+        if vid_errors != []:
+            # Make pop up - alerts of invalid data
+            popup = ErrorPopup()
+            # Adjust the text on the popup
+            popup.error_label.text = "Invalid Data:\n" + "".join(vid_errors)
+            popup.open()
+        # If no issues with the data
+        else:
+            # Set use_ion to False
+            # self.app.get_screen("IE3").use_ion = False
+            # Change screen to IE3
+            # self.app.root.current = "IP3"
+            # self.app.root.transition.direction = "left"
+            pass
+
+    def check_vids(self):
+        return []
 
     def select_vid_files(self):
         """called when [select video file(s)] button is pressed
