@@ -14,10 +14,16 @@ class Experiment():
         self.vid_loc = vid_loc
         self.first_frame = first_frame(vid_loc)
         # Ion current file
-        self.ioncur_loc = ''
+        self.ion_loc = ''
         # Grab the dates of creation of the files
         self.vid_date = file_date(self.vid_loc)
-        self.ioncur_date = file_date(self.ioncur_loc)
+    
+    def add_ion_file(self, file_loc):
+        self.ion_loc = file_loc
+        self.ion_date = file_date(self.ion_loc)
+
+    def remove_ion_file(self):
+        self.ion_loc = ''
 
         
 

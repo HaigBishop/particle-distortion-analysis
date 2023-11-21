@@ -48,6 +48,14 @@ def is_video_file(file_loc):
     # Check if the file extension is in the list of video extensions
     return file_extension in video_extensions
 
+def is_ion_file(file_loc):
+    # Extract the file extension
+    file_extension = os.path.splitext(file_loc)[1].lower()
+    # List of common video file extensions
+    ion_extensions = ['.tdms']
+    # Check if the file extension is in the list of video extensions
+    return file_extension in ion_extensions
+
 def first_frame(video_loc):
     """Returns the first frame of the video at video_loc"""
     # Open the video file

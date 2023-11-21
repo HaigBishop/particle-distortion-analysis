@@ -20,10 +20,11 @@ from cv2 import flip
 # Import local modules
 from popup_elements import BackPopup
 from jobs import Experiment
-from file_management import is_video_file, kivify_image
+from file_management import is_ion_file, is_video_file, kivify_image
 
 class IE1Window(Screen):
     """position -> force screen"""
+    ion_files_attached = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         """init method for IE1 screen"""
@@ -45,7 +46,7 @@ class IE1Window(Screen):
         filters = [("AVI files", "*.avi")]
         # Open folder selector window - send selection to self.selected
         filechooser.open_file(
-            on_selection=self.selected, 
+            on_selection=self.vid_selected, 
             title="Select file(s)", 
             filters=filters,
             multiple=True
@@ -62,13 +63,10 @@ class IE1Window(Screen):
             on_selection=self.ion_selected, 
             title="Select file(s)", 
             filters=filters,
-            multiple=True
+            multiple=False
         )
 
-    def ion_selected(self, selection):
-        pass
-
-    def selected(self, selection):
+    def vid_selected(self, selection):
         """receives selection from selector window
         - checks if the selections are valid
         - if they are it adds them as experiments
@@ -122,6 +120,50 @@ class IE1Window(Screen):
             # Update location label
             self.location_label.text = error_string
 
+    def ion_selected(self, selection):
+        # Set booleans to test if selection is valid
+        there_is_current, invalid_type = True, False
+        for file_loc in selection:
+            if is_ion_file(file_loc):
+                # If there is a current experiment
+                if self.app.current_experiment is not None:
+                    # Add it to the current experiment
+                    self.app.current_experiment.add_ion_file(file_loc)
+                else:
+                    there_is_current = False
+            # It is invalid type!
+            else:
+                invalid_type = True
+        # Update ion attached boolean
+        self.update_ion_files_attached()
+        # Update everything visually
+        self.update_fields()
+        # If there was a failed selection
+        if not there_is_current or invalid_type:
+            # Make an error string describing the issue
+            error_string = ""
+            if there_is_current == False:
+                # Update error string
+                error_string += "No current experiment  "
+            if invalid_type == True:
+                # Update error string
+                error_string += "Incorrect file type(s)"
+            # Update location label
+            self.ion_location_label.text = error_string
+
+    def on_ion_x_btn(self):
+        """Called when the 'x' button next two the ion current file selection is pressed."""
+        self.app.current_experiment.remove_ion_file()
+        # Update ion attached boolean
+        self.update_ion_files_attached()
+        # Update everything visually
+        self.update_fields()
+    
+    def update_ion_files_attached(self):
+        any_exps = len(self.app.experiments) != 0
+        self.ion_files_attached = any_exps and all([exp.ion_loc != '' for exp in self.app.experiments])
+
+
     def update_fields(self):
         """updates the text inputs and the 'location label'
         - new values are determined by the current experiment"""
@@ -132,11 +174,17 @@ class IE1Window(Screen):
             self.location_label.text = str(current.vid_loc)
             self.name_input.text = str(current.name)
             self.update_image_preview()
+            # Update ion current file select section
+            if current.ion_loc != '':
+                self.ion_location_label.text = str(current.ion_loc)
+            else:
+                self.ion_location_label.text = 'No file selected'
         else:
             # Reset with defaults
             self.location_label.text = "No experiment selected"
             self.name_input.text = ""
             self.image_widget.texture = None
+            self.ion_location_label.text = 'No file selected'
 
     def on_name_text(self, text):
         """called when name text input is changed
@@ -174,10 +222,18 @@ class IE1Window(Screen):
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
 
+    def on_experiments(self, instance, experiments):
+        # Update ion attached boolean
+        self.update_ion_files_attached()
+
     def _on_file_drop(self, file_path):
         """called when a file is dropped on this screen
         - sends the file path to the selected method"""
-        self.selected([file_path])
+        # If it is a TDMS file send it to the ion selection method
+        if file_path[-5:].lower() == '.tdms':
+            self.ion_selected([file_path])
+        else:
+            self.vid_selected([file_path])
 
 
 class ExperimentList(ScrollView):

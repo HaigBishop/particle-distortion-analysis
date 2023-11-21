@@ -239,6 +239,7 @@ WindowManager:
     exp_scroll: exp_scroll
     select_vid_btn: select_vid_btn
     location_label: location_label
+    ion_location_label: ion_location_label
     param_grid_layout: param_grid_layout
     name_grid_layout: name_grid_layout
     name_input: name_input
@@ -258,6 +259,11 @@ WindowManager:
             Rectangle:
                 pos: (0,0)
                 size: (self.width*0.75, (self.height-80) * 0.79)
+            Color:
+                rgba: GREY
+            Line:
+                points: [self.width*0.36, (self.height-80) * 0.79, self.width*0.36, 0]
+                width: 0.5
         cols: 3
         GridLayout:
             rows: 2
@@ -323,7 +329,7 @@ WindowManager:
                             text: 'Experiment Name:'
                             color: WHITE
                             font_name: 'resources\\Inter.ttf'
-                            font_size: 24
+                            font_size: 22
                             size_hint_x: 0.35
                         FloatLayout:
                             size_hint_x: 0.6
@@ -351,7 +357,7 @@ WindowManager:
                             size: (200, 50)
                             disabled_color: DARK_GREY
                             font_size: 18
-                            pos_hint: {'x':.06, 'y':.8}
+                            pos_hint: {'x':.06, 'y':.83}
                             text:'select ion current file'
                             on_release: root.select_ion_file()
                             font_name: 'resources\\Inter.ttf'
@@ -361,16 +367,17 @@ WindowManager:
                             background_color: CLEAR
                             background_normal: ''
                             color: WHITE
-                            disabled: True if ion_file_location_label.text == 'No file selected' else False
+                            disabled: True if ion_location_label.text == 'No file selected' else False
                             size_hint: (None, None)
                             size: (30, 30)
-                            pos_hint: {'x':.052, 'y':.71}
+                            pos_hint: {'x':.052, 'y':.762}
+                            on_press: root.on_ion_x_btn()
                         Label:
-                            id: ion_file_location_label
+                            id: ion_location_label
                             color: WHITE
                             size_hint:(None,None)
-                            size: (ion_select_layout.width - 30,50)
-                            pos_hint: {'x':.12, 'y':0.72}
+                            size: (ion_select_layout.width * 0.82,50)
+                            pos_hint: {'x':.13, 'y':0.77}
                             text: 'No file selected'
                             halign: 'left'
                             font_name: 'resources\\Inter.ttf'
@@ -394,7 +401,7 @@ WindowManager:
             size_hint_x: 0.02
         GridLayout:
             id: right_grid
-            rows: 3
+            rows: 6
             size_hint_x: 0.24
             Label:
                 text:'Experiments'
@@ -409,19 +416,34 @@ WindowManager:
                 id: exp_scroll
                 window: ie1_window
                 size_hint:(None,None)
-                height: right_grid.height - 120
+                height: right_grid.height - 180
                 width: right_grid.width-6
                 bar_pos_y: 'right'
                 do_scroll_x: False
                 do_scroll_y: True
+            FloatLayout:
+                size_hint:(None,None)
+                size: (right_grid.width-6, 6)
             TangyButton:
-                disabled:  len(root.exp_scroll.grid_layout.children) == 0
+                disabled:  len(root.exp_scroll.grid_layout.children) == 0 or not root.ion_files_attached
                 disabled_color: DARK_GREY
                 text: 'Process Current Data'
                 size_hint:(None,None)
                 font_size: 22
                 font_name: 'resources\\Inter.ttf'
-                size: (right_grid.width-6, 52)
+                size: (right_grid.width-6, 50)
+                on_release: root.detect()
+            FloatLayout:
+                size_hint:(None,None)
+                size: (right_grid.width-6, 6)
+            TangyButton:
+                disabled:  len(root.exp_scroll.grid_layout.children) == 0
+                disabled_color: DARK_GREY
+                text: 'Proceed Without Current Data'
+                size_hint:(None,None)
+                font_size: 16
+                font_name: 'resources\\Inter.ttf'
+                size: (right_grid.width-6, 50)
                 on_release: root.detect()
 
 
@@ -527,7 +549,7 @@ WindowManager:
         text: 'Name:  ' + str(root.experiment.name)
         color: WHITE
         size_hint: (None, None)
-        size: (root.width - 35, 30)
+        size: (root.width - 50, 30)
         pos: (root.x + 5, root.y + 70)
         halign: 'left'
         color: DARK_GREY
@@ -537,7 +559,7 @@ WindowManager:
         text: 'File:  ' + str(root.experiment.vid_loc).split('\\')[-1].split('/')[-1]
         color: WHITE
         size_hint: (None, None)
-        size: (root.width, 30)
+        size: (root.width, 35)
         pos: (root.x + 5, root.y + 40)
         halign: 'left'
         color: DARK_GREY

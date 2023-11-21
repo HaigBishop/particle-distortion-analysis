@@ -1,13 +1,14 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.2)
+Program: Particle Deformation Analysis (Version 0.1.3)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 16/11/2023
+Date: 21/11/2023
 Version Description:
-- Fleshed out experiment related properties
-- add ion select button and video preview
-- Added help screen
+- Added logo
+- Ability to select ion files
+- Updated IE1 screen
+- New button with disabling function
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -103,6 +104,8 @@ class PDAApp(App):
         """initialises the app"""
         # Label window
         self.title = "Particle Deformation Analysis"
+        # Set app icon
+        self.icon = "resources\\icon.png"
         # Get references to the screens needed
         self.ie1_window = self.root.get_screen("IE1")
         # Bind the file drop call
@@ -118,6 +121,16 @@ class PDAApp(App):
             # Send to that screen
             screen = self.root.get_screen(current_screen)
             screen._on_file_drop(file_path)
+
+    def on_experiments(self, instance, experiments):
+        """Called when the experiments list changes.
+        Calls on_experiments if the current screen has that method."""
+        # If on a screen with an on_experiments method
+        current_screen = self.root.current
+        if current_screen == "IE1":
+            # Call on_experiments for that screen
+            screen = self.root.get_screen(current_screen)
+            screen.on_experiments(instance, experiments)
     
     def on_current_experiment(self, instance, current_experiment):
         """Called when the current experiment changes.
