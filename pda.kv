@@ -18,6 +18,7 @@
 WindowManager:
     MainWindow:
     IE1Window:
+    IE3Window:
 
 
 
@@ -321,7 +322,7 @@ WindowManager:
                         font_size: 16
                     GridLayout:
                         id: name_grid_layout
-                        disabled: True
+                        disabled: app.current_experiment is None
                         cols: 2
                         size_hint:(.69, 1)
                         pos_hint: {'x':.30, 'y':0}
@@ -344,7 +345,7 @@ WindowManager:
                                 text_align: 'justify'
                 GridLayout:
                     id: param_grid_layout
-                    disabled: True
+                    disabled: app.current_experiment is None
                     cols: 2
                     size_hint_y: 0.8
                     FloatLayout:
@@ -450,11 +451,255 @@ WindowManager:
 
 
 
+
+
 # =========================================================================================
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# =========================================================================================
+
+
+
+
+
+<IE3Window>:
+    name: 'IE3'
+    id: ie3_window
+    exp_scroll: exp_scroll
+    location_label: location_label
+    ion_location_label: ion_location_label
+    video_widget: video_widget
+    GridLayout:
+        canvas:
+            Color:
+                rgba: 1,1,1,0.1
+            Line:
+                points: [0, self.height - 60, self.width, self.height - 60]
+                width: 0.5
+            Line:
+                points: [self.width*0.75, self.height, self.width*0.75, 0]
+                width: 0.5
+            Color:
+                rgba: (42/255, 42/255, 45/255, 1)
+            Rectangle:
+                pos: (0,0)
+                size: (self.width*0.75, self.height-60)
+        cols: 3
+        GridLayout:
+            rows: 2
+            size_hint_x: 0.74
+            GridLayout:
+                cols: 3
+                size_hint_y: None
+                height: 60
+                BlankButton:
+                    text:'←'
+                    font_name: 'resources\\Inter.ttf'
+                    font_size: 52
+                    padding: [0, 20]
+                    size_hint_x: None
+                    width: 120
+                    on_release: 
+                        root.on_back_btn()
+                Label:
+                    font_name: 'resources\\Inter.ttf'
+                    text: 'Select Events'
+                    font_size: 30
+                    padding: [5, 3]
+                    size_hint_x: None
+                    width: 700
+                    halign: 'left'
+                    valign: 'center'
+                    text_size: self.size
+                FloatLayout:
+                    size_hint_x: 1
+            GridLayout:
+                rows: 4
+                size_hint_y: 1
+                # Buttons row
+                GridLayout:
+                    cols: 5
+                    size_hint_y: 0.1
+                    BlankButton:
+                        text:'←'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 22
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                    BlankButton:
+                        text:'+'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 22
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                    BlankButton:
+                        text:'−'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 22
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                    BlankButton:
+                        text:'→'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 22
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                    Label:
+                        id: ion_location_label
+                        color: WHITE
+                        size_hint_x: 1
+                        text: 'No file(s) selected'
+                        padding: [20, 0, 0, 10]
+                        halign: 'left'
+                        font_name: 'resources\\Inter.ttf'
+                        text_size: self.size
+                        shorten: True
+                        font_size: 16
+                GridLayout:
+                    id: image_row
+                    size_hint_y: 0.2
+                    cols: 3
+                    FloatLayout:
+                        size_hint: None, 1
+                        width: 24
+                    # Ion current view
+                    IonCurrentView:
+                        size_hint: None, 1
+                        width: image_row.width - 48
+                    FloatLayout:
+                        size_hint: None, 1
+                        width: 24
+                # Slider
+                Slider:
+                    size_hint: 1, 0.1
+                    min: 0
+                    max: 100
+                    cursor_image: 'resources\\white_circle.png'
+                    cursor_size: 36, 36
+                # Side buttons and video view
+                GridLayout:
+                    cols: 4
+                    size_hint_y: 0.6
+                    FloatLayout:
+                        size_hint:(None,1)
+                        width: 12
+                    # Side Buttons
+                    GridLayout:
+                        size_hint_x: 0.3
+                        rows: 6
+                        TangyButton:
+                            disabled:  True
+                            disabled_color: DARK_GREY
+                            text: 'Enter Start'
+                            size_hint:(None,None)
+                            font_size: 16
+                            font_name: 'resources\\Inter.ttf'
+                            size_hint: 1, 0.25
+                        FloatLayout:
+                            size_hint:(1,None)
+                            height: 6
+                        TangyButton:
+                            disabled:  True
+                            disabled_color: DARK_GREY
+                            text: 'Enter Stop'
+                            size_hint:(None,None)
+                            font_size: 16
+                            font_name: 'resources\\Inter.ttf'
+                            size_hint: 1, 0.25
+                        FloatLayout:
+                            size_hint:(1,None)
+                            height: 6
+                        TangyButton:
+                            disabled:  True
+                            disabled_color: DARK_GREY
+                            text: 'Remove'
+                            size_hint:(None,None)
+                            font_size: 16
+                            font_name: 'resources\\Inter.ttf'
+                            size_hint: 1, 0.25
+                        FloatLayout:
+                            size_hint:(1,1)
+                    FloatLayout:
+                        size_hint:(None,1)
+                        width: 12
+                    # Video View & File Location Label
+                    GridLayout:
+                        size_hint_x: 0.7
+                        rows: 2
+                        Image:
+                            id: video_widget
+                            size_hint: (1, 0.9)
+                            fit_mode: 'contain'
+                            color: CLEAR if self.texture is None else WHITE
+                        Label:
+                            id: location_label
+                            color: WHITE
+                            size_hint: (1, 0.1)
+                            text: 'No file(s) selected'
+                            padding: [20, 0, 0, 10]
+                            halign: 'left'
+                            font_name: 'resources\\Inter.ttf'
+                            text_size: self.size
+                            shorten: True
+                            font_size: 16
+        FloatLayout:
+            size_hint_x: 0.02
+        GridLayout:
+            id: right_grid
+            rows: 6
+            size_hint_x: 0.24
+            Label:
+                text:'Experiments'
+                size_hint_y: None
+                padding: [0, 45]
+                font_name: 'resources\\Inter.ttf'
+                color: WHITE
+                font_size: 28
+                height: 60
+                valign: 'center'
+            ExperimentList:
+                id: exp_scroll
+                window: ie3_window
+                size_hint:(None,None)
+                height: right_grid.height - 124
+                width: right_grid.width-6
+                bar_pos_y: 'right'
+                do_scroll_x: False
+                do_scroll_y: True
+            FloatLayout:
+                size_hint:(None,None)
+                size: (right_grid.width-6, 6)
+            TangyButton:
+                disabled:  len(root.exp_scroll.grid_layout.children) == 0
+                disabled_color: DARK_GREY
+                text: 'Proceed'
+                size_hint:(None,None)
+                font_size: 16
+                font_name: 'resources\\Inter.ttf'
+                size: (right_grid.width-6, 50)
+                on_release: root.on_proceed_without()
+
+
+
+
+
+
+
+
+
+
+# =========================================================================================
+
+
+
+
 
 <BackPopup>:
     size_hint: 0.6, 0.4
-    title: 'Return to Main Menu and lose all progress' if self.screen_id == 'main' else 'No prompt written yet!'
+    title: 'Return to Main Menu and lose all progress' if self.screen_id == 'main' else 'Return to previous screen and lose progress here'
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -584,7 +829,7 @@ WindowManager:
         size_hint: (None, None)
         size: (30, 30)
         pos: (root.x + root.width - 30, root.y + root.height - 30)
-        on_press: root.parent.parent.on_x_btn(root)
+        on_press: root.parent.parent.on_x_btn(root, root.window.name)
     Button:
         background_color: CLEAR
         size_hint: (None, None)
@@ -596,3 +841,9 @@ WindowManager:
             y: self.parent.y + 5
             x: self.parent.x
             size: (20, 20)
+
+
+
+<IonCurrentView@Image>:
+    size_hint: 1, 1
+    color: WHITE if self.texture is None else WHITE

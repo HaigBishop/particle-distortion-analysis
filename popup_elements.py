@@ -25,8 +25,9 @@ class BackPopup(Popup):
         if answer == "yes":
             # Get app object
             app = App.get_running_app()
-            # Empty the job list
-            app.clear_experiments()
+            # Empty the job list (boxes only if not going to main)
+            boxes_only = self.screen_id != 'main'
+            app.clear_experiments(boxes_only=boxes_only)
             # Update the current screen
             app.root.get_screen(app.root.current).update_fields()
             # Change screen

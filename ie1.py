@@ -6,8 +6,6 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 
 # Kivy imports
 from kivy.app import App
-from kivy.uix.button import Button
-from kivy.uix.scrollview import ScrollView
 from kivy.uix.screenmanager import Screen
 from kivy.properties import BooleanProperty
 
@@ -18,7 +16,7 @@ from cv2 import flip
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
-from jobs import Experiment
+from jobs import Experiment, ExperimentBox, ExperimentList
 from file_management import is_ion_file, is_video_file, kivify_image
 
 class IE1Window(Screen):
@@ -50,11 +48,13 @@ class IE1Window(Screen):
         # If no issues with the data
         else:
             # Set use_ion to False
-            # self.app.get_screen("IE3").use_ion = False
+            ie3_window = self.app.root.get_screen("IE3")
+            ie3_window.use_ion = False
             # Change screen to IE3
-            # self.app.root.current = "IP3"
-            # self.app.root.transition.direction = "left"
-            pass
+            self.app.root.current = "IE3"
+            self.app.root.transition.direction = "left"
+            # Load experiments on new screen
+            ie3_window.load_experiments()
 
     def check_vids(self):
         return []
@@ -255,91 +255,4 @@ class IE1Window(Screen):
             self.ion_selected([file_path])
         else:
             self.vid_selected([file_path])
-
-
-class ExperimentList(ScrollView):
-    """scrolling widget in IE1"""
-
-    def __init__(self, **kwargs):
-        """init method for the scrolling widget in IE1"""
-        # Save app as an attribute
-        self.app = App.get_running_app()
-        # Call ScrollView init method
-        super(ExperimentList, self).__init__(**kwargs)
-
-    def clear_list(self):
-        # Disabled layouts
-        self.window.param_grid_layout.disabled = True
-        self.window.name_grid_layout.disabled = True
-        # While there are still jobs
-        while len(self.grid_layout.children) != 0:
-            # Remove the first job
-            self.grid_layout.remove_widget(self.grid_layout.children[0])
-        # clear experiment objects
-        self.app.experiments.clear()
-        # Update visual stuff
-        self.window.update_fields()
-
-    def on_x_btn(self, box):
-        """called when an x button on a box is pressed
-        - disables the layouts because there is nothing selected now
-        - removes the experiments
-        - updates visuals"""
-        # Disabled layouts
-        self.window.param_grid_layout.disabled = True
-        self.window.name_grid_layout.disabled = True
-        # Remove that experiment
-        self.grid_layout.remove_widget(box)
-        # Update current experiment to none
-        self.app.remove_experiment(box.experiment)
-        # Update visual stuff
-        self.window.update_fields()
-
-    def on_current_experiment(self, instance, current_experiment):
-        # For every box
-        for exp_box in self.grid_layout.children:
-            # If not selected
-            if exp_box.experiment != current_experiment:
-                exp_box.is_selected = False
-            # If selected
-            else:
-                exp_box.is_selected = True
-
-
-
-class ExperimentBox(Button):
-    """experiment widget on the IE1ScrollView widget"""
-    is_selected = BooleanProperty(False)
-
-    def __init__(self, experiment, window, **kwargs):
-        """init method for experiment boxes on a experiment list scrollview"""
-        self.experiment = experiment
-        self.window = window
-        # Save app as an attribute
-        self.app = App.get_running_app()
-        # Call Button init method
-        super().__init__(**kwargs)
-
-    def on_press(self):
-        """called when the experiment box is pressed
-        - sets this experiment to be current
-        - enables layouts
-        - updates visuals
-        - scrolls textboxes back to the start"""
-        # This is now the current experiment
-        self.app.select_experiment(self.experiment)
-        # Enable layouts
-        self.window.param_grid_layout.disabled = False
-        self.window.name_grid_layout.disabled = False
-        # Update the visuals
-        self.window.update_fields()
-
-    def on_open_btn(self):
-        """Called by button on experiment box
-        Opens the file/folder associated with the experiment"""
-        # Find last slash
-        s = str(self.experiment.vid_loc).rfind("\\") + 1
-        # E.g. 'C:\Desktop\folder\'
-        path = str(self.experiment.vid_loc)[:s]
-        # Open that folder in the explorer
-        p_open('explorer "' + str(path) + '"')
+            

@@ -1,15 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.3)
+Program: Particle Deformation Analysis (Version 0.1.4)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 21/11/2023
+Date: 22/11/2023
 Version Description:
-- Added logo
-- Ability to select ion files
-- Updated IE1 screen
-- New button with disabling function
-- Better code
+- Added non-functional IE3
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -42,6 +38,7 @@ from kivy.properties import ListProperty, ObjectProperty
 
 # Import local modules
 from ie1 import *
+from ie3 import *
 
 # Set background colour to grey
 DARK_GREY = (32 / 255, 33 / 255, 35 / 255, 1)
@@ -107,8 +104,6 @@ class PDAApp(App):
         self.title = "Particle Deformation Analysis"
         # Set app icon
         self.icon = "resources\\icon.png"
-        # Get references to the screens needed
-        self.ie1_window = self.root.get_screen("IE1")
         # Bind the file drop call
         Window.bind(on_drop_file=self._on_file_drop)
 
@@ -138,7 +133,7 @@ class PDAApp(App):
         Calls on_current_experiment if the current screen has this method."""
         # If on a screen with an experiments list
         current_screen = self.root.current
-        if current_screen == "IE1":
+        if current_screen in ["IE1", "IE3"]:
             # Call on_current_experiment for that exp list scrollview
             screen = self.root.get_screen(current_screen)
             screen.exp_scroll.on_current_experiment(instance, current_experiment)
@@ -172,15 +167,15 @@ class PDAApp(App):
         """Returns True if the given video file is in the experiment list."""
         return vid_loc in [exp.vid_loc for exp in self.experiments]
     
-    def clear_experiments(self):
+    def clear_experiments(self, boxes_only=False):
         """Clears all experiments and experiment boxes from the current screen."""
         # If on a screen with an experiments list
         current_screen = self.root.current
-        if current_screen == "IE1":
+        if current_screen in ["IE1", "IE3"]:
             # Get that screen's exp_scroll
             exp_scroll = self.root.get_screen(current_screen).exp_scroll
             # Clear both lists
-            exp_scroll.clear_list()
+            exp_scroll.clear_list(boxes_only=boxes_only)
             # Deselect
             self.current_experiment = None
 
