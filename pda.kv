@@ -19,6 +19,7 @@ WindowManager:
     MainWindow:
     IE1Window:
     IE3Window:
+    TD1Window:
 
 
 
@@ -148,6 +149,9 @@ WindowManager:
                         text: 'Track Particle Deformation' # '...'
                         size_hint: (1, 0.9)
                         pos_hint: {'right': 1, 'top':1}
+                        on_release: 
+                            app.root.current = 'TD1'
+                            root.manager.transition.direction = 'left'
                 FloatLayout:
                     size_hint_y: 0.25
                     TangyButton:
@@ -706,6 +710,173 @@ WindowManager:
 
 
 
+# =========================================================================================
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# =========================================================================================
+
+<TD1Window>:
+    name: 'TD1'
+    id: td1_window
+    evt_scroll: evt_scroll
+    select_event_btn: select_event_btn
+    location_label: location_label
+    param_grid_layout: param_grid_layout
+    name_grid_layout: name_grid_layout
+    name_input: name_input
+    image_widget: image_widget
+    GridLayout:
+        canvas:
+            Color:
+                rgba: 1,1,1,0.1
+            Line:
+                points: [0, self.height - 60, self.width, self.height - 60]
+                width: 0.5
+            Line:
+                points: [self.width*0.75, self.height, self.width*0.75, 0]
+                width: 0.5
+            Color:
+                rgba: (42/255, 42/255, 45/255, 1)
+            Rectangle:
+                pos: (0,0)
+                size: (self.width*0.75, (self.height-80) * 0.79)
+        cols: 3
+        GridLayout:
+            rows: 2
+            size_hint_x: 0.74
+            GridLayout:
+                cols: 3
+                size_hint_y: None
+                height: 60
+                BlankButton:
+                    text:'←'
+                    font_name: 'resources\\Inter.ttf'
+                    font_size: 52
+                    padding: [0, 20]
+                    size_hint_x: None
+                    width: 120
+                    on_release: 
+                        root.on_back_btn()
+                Label:
+                    font_name: 'resources\\Inter.ttf'
+                    text: 'Track Deformation'
+                    font_size: 30
+                    padding: [5, 3]
+                    size_hint_x: None
+                    width: 700
+                    halign: 'left'
+                    valign: 'center'
+                    text_size: self.size
+                FloatLayout:
+                    size_hint_x: 1
+            GridLayout:
+                rows: 2
+                size_hint_y: 1
+                FloatLayout:
+                    size_hint_y: 0.2
+                    TangyButton:
+                        id: select_event_btn
+                        size_hint:(None,None)
+                        font_name: 'resources\\Inter.ttf'
+                        size: (160,50)
+                        font_size: 18
+                        pos_hint: {'x':.095, 'y':.3}
+                        text:'select event(s)'
+                        on_release: root.select_event_files()
+                    Label:
+                        id: location_label
+                        color: WHITE
+                        size_hint:(None,None)
+                        size: (self.parent.width * 0.8, 40)
+                        pos_hint: {'x':.1, 'y':0.06}
+                        text: 'No file(s) selected'
+                        halign: 'left'
+                        font_name: 'resources\\Inter.ttf'
+                        text_size: self.size
+                        shorten: True
+                        font_size: 16
+                    GridLayout:
+                        id: name_grid_layout
+                        disabled: app.current_event is None
+                        cols: 2
+                        size_hint:(.69, 1)
+                        pos_hint: {'x':.30, 'y':0}
+                        Label:
+                            text: 'Event Name:'
+                            color: WHITE
+                            font_name: 'resources\\Inter.ttf'
+                            font_size: 22
+                            size_hint_x: 0.35
+                        FloatLayout:
+                            size_hint_x: 0.6
+                            TextInput:
+                                id: name_input
+                                on_text: root.on_name_text(self.text)
+                                size_hint_x: 1
+                                size_hint_y: None
+                                pos_hint: {'x':0, 'center_y':.5}
+                                height: 40
+                                multiline: False
+                                text_align: 'justify'
+                GridLayout:
+                    id: param_grid_layout
+                    disabled: app.current_event is None
+                    cols: 1
+                    size_hint_y: 0.8
+                    GridLayout:
+                        size_hint_x: 1
+                        rows: 2
+                        Label:
+                            font_name: 'resources\\Inter.ttf'
+                            text: 'Video Preview'
+                            font_size: 32
+                            size_hint: (1, 0.2)
+                        Image:
+                            id: image_widget
+                            size_hint: (1, 0.8)
+                            fit_mode: 'contain'
+                            color: CLEAR if self.texture is None else WHITE
+        FloatLayout:
+            size_hint_x: 0.02
+        GridLayout:
+            id: right_grid
+            rows: 4
+            size_hint_x: 0.24
+            Label:
+                text:'Events'
+                size_hint_y: None
+                padding: [0, 45]
+                font_name: 'resources\\Inter.ttf'
+                color: WHITE
+                font_size: 28
+                height: 60
+                valign: 'center'
+            ExperimentList:
+                id: evt_scroll
+                window: td1_window
+                size_hint:(None,None)
+                height: right_grid.height - 124
+                width: right_grid.width-6
+                bar_pos_y: 'right'
+                do_scroll_x: False
+                do_scroll_y: True
+            FloatLayout:
+                size_hint:(None,None)
+                size: (right_grid.width-6, 6)
+            TangyButton:
+                disabled:  len(root.evt_scroll.grid_layout.children) == 0
+                disabled_color: DARK_GREY
+                text: 'Track Deformation'
+                size_hint:(None,None)
+                font_size: 20
+                font_name: 'resources\\Inter.ttf'
+                size: (right_grid.width-6, 50)
+                on_release: root.on_track()
+
+
+
+
+
+
 
 
 
@@ -861,6 +1032,101 @@ WindowManager:
             x: self.parent.x
             size: (20, 20)
 
+
+
+
+
+# =========================================================================================
+
+<EventList>:
+    size_hint: (1, 1)
+    grid_layout: grid
+    GridLayout:
+        id: grid
+        size_hint_y: None
+        height: max(self.minimum_height,root.height)
+        cols: 1
+        spacing: 5
+
+        
+# =========================================================================================
+
+<EventBox>:
+    size_hint_x: 1
+    size_hint_y: None
+    height: 100
+    name: 'temp'
+    date: None
+    file_location: None
+    background_normal: ''
+    background_normal: ''
+    background_color: CLEAR
+    background_down: ''
+    border: CLEAR
+    font_name: 'resources\\Inter.ttf'
+    canvas.before:
+        Color:
+            rgba: self.is_selected and OFFWHITE or GREY
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12,]
+    Label:
+        text: 'Name:  ' + str(root.experiment.name)
+        color: WHITE
+        size_hint: (None, None)
+        size: (root.width - 50, 30)
+        pos: (root.x + 5, root.y + 70)
+        halign: 'left'
+        color: DARK_GREY
+        text_size: self.size
+        shorten: True
+    Label:
+        text: 'File:  ' + str(root.experiment.vid_loc).split('\\')[-1].split('/')[-1]
+        color: WHITE
+        size_hint: (None, None)
+        size: (root.width, 35)
+        pos: (root.x + 5, root.y + 40)
+        halign: 'left'
+        color: DARK_GREY
+        text_size: self.size
+        shorten: True
+    Label:
+        text: 'Date:  ' + str(root.experiment.vid_date)
+        color: WHITE
+        size_hint: (None, None)
+        size: (root.width, 30)
+        pos: (root.x + 5, root.y + 10)
+        halign: 'left'
+        color: DARK_GREY
+        text_size: self.size
+        shorten: True
+    Button:
+        text: '×'
+        font_size: 24
+        background_color: CLEAR
+        background_normal: ''
+        color: DARK_GREY
+        size_hint: (None, None)
+        size: (30, 30)
+        pos: (root.x + root.width - 30, root.y + root.height - 30)
+        on_press: root.parent.parent.on_x_btn(root, root.window.name)
+    Button:
+        background_color: CLEAR
+        size_hint: (None, None)
+        size: (20, 30)
+        pos: (root.x + root.width - 50, root.y + root.height - 30)
+        on_press: root.on_open_btn()
+        Image:
+            source: 'resources\\open_btn.png'
+            y: self.parent.y + 5
+            x: self.parent.x
+            size: (20, 20)
+
+
+
+
+# =========================================================================================
 
 
 <IonCurrentView>:

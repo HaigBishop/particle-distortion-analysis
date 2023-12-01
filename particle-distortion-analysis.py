@@ -1,13 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.5)
+Program: Particle Deformation Analysis (Version 0.1.6)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 Date: 1/12/2023
 Version Description:
-- Added video scrolling in IE3
-- Added ion view red line
-- Frame counter
+- Added non-function TD1 page
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -41,6 +39,7 @@ from kivy.properties import ListProperty, ObjectProperty
 # Import local modules
 from ie1 import *
 from ie3 import *
+from td1 import *
 
 # Set background colour to grey
 DARK_GREY = (32 / 255, 33 / 255, 35 / 255, 1)
@@ -97,8 +96,9 @@ class PDAApp(App):
     # Initialise list of experiments
     experiments = ListProperty([])
     events = ListProperty([])
-    # This holds the current experiment
+    # This holds the current event/experiment
     current_experiment = ObjectProperty(None, allownone=True)
+    current_event = ObjectProperty(None, allownone=True)
 
     def build(self):
         """initialises the app"""
@@ -169,6 +169,11 @@ class PDAApp(App):
         """Deselects all experiments"""
         # Deselect
         self.current_experiment = None
+    
+    def deselect_all_events(self):
+        """Deselects all events"""
+        # Deselect
+        self.current_event = None
 
     def duplicate_experiment(self, vid_loc):
         """Returns True if the given video file is in the experiment list."""

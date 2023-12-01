@@ -1,5 +1,5 @@
 """
-Module:  All classes related to Tracking Deformation Screen 1
+Module:  All classes related to Import Experiments Screen 1
 Program: Particle Deformation Analysis
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 """

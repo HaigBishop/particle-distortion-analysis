@@ -153,3 +153,29 @@ class Event():
         self.ioncur_dims = ()
         self.ioncur_num_frames = 0
         self.first_frame = ''
+
+
+class EventBox(Button):
+    """event widget on the EventList scrollview widget"""
+    is_selected = BooleanProperty(False)
+
+    def __init__(self, event, window, **kwargs):
+        """init method for event boxes on a event list scrollview"""
+        self.event = event
+        self.window = window
+        # Save app as an attribute
+        self.app = App.get_running_app()
+        # Call Button init method
+        super().__init__(**kwargs)
+        
+
+
+class EventList(ScrollView):
+    """scrolling widget which holds events"""
+
+    def __init__(self, **kwargs):
+        """init method for the scrolling widget"""
+        # Save app as an attribute
+        self.app = App.get_running_app()
+        # Call ScrollView init method
+        super(EventList, self).__init__(**kwargs)

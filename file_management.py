@@ -47,6 +47,9 @@ def is_video_file(file_loc):
     # Check if the file extension is in the list of video extensions
     return file_extension in video_extensions
 
+def is_event_file(file_loc):
+    return False
+
 def is_ion_file(file_loc):
     # Extract the file extension
     file_extension = os.path.splitext(file_loc)[1].lower()
