@@ -25,6 +25,8 @@ class BackPopup(Popup):
         if answer == "yes":
             # Get app object
             app = App.get_running_app()
+            # Reset current experiment
+            app.current_experiment = None
             # Empty the job list (boxes only if not going to main)
             boxes_only = self.screen_id != 'main'
             app.clear_experiments(boxes_only=boxes_only)

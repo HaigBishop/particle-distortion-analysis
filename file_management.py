@@ -55,6 +55,15 @@ def is_ion_file(file_loc):
     # Check if the file extension is in the list of video extensions
     return file_extension in ion_extensions
 
+def read_vid(video_loc):
+    # Open the video file
+    cap = cv2.VideoCapture(video_loc)
+    # Check if the video file is opened successfully
+    if not cap.isOpened():
+        print("Error: Could not open video file.")
+        return None
+    return cap
+
 def first_frame(video_loc):
     """Returns the first frame of the video at video_loc"""
     # Open the video file
@@ -71,4 +80,18 @@ def first_frame(video_loc):
     if not ret:
         print("Error: Could not read the first frame.")
         return None
+    return frame
+
+def get_frame(cap, target_frame):
+    # Set the video capture object to the target frame
+    cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
+    
+    # Read the frame from the video
+    ret, frame = cap.read()
+    
+    # Check if the frame is read successfully
+    if not ret:
+        print("Error: Could not read frame.")
+        return None
+    
     return frame

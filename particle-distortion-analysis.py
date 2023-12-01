@@ -1,11 +1,13 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.4)
+Program: Particle Deformation Analysis (Version 0.1.5)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 22/11/2023
+Date: 1/12/2023
 Version Description:
-- Added non-functional IE3
+- Added video scrolling in IE3
+- Added ion view red line
+- Frame counter
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -131,12 +133,17 @@ class PDAApp(App):
     def on_current_experiment(self, instance, current_experiment):
         """Called when the current experiment changes.
         Calls on_current_experiment if the current screen has this method."""
-        # If on a screen with an experiments list
         current_screen = self.root.current
+        # If on a screen with an experiments list
         if current_screen in ["IE1", "IE3"]:
             # Call on_current_experiment for that exp list scrollview
             screen = self.root.get_screen(current_screen)
             screen.exp_scroll.on_current_experiment(instance, current_experiment)
+        # If on a IE3
+        if current_screen in ["IE3"]:
+            # Call on_current_experiment for that exp list scrollview
+            screen = self.root.get_screen(current_screen)
+            screen.on_current_experiment(instance, current_experiment)
     
     def remove_experiment(self, experiment):
         """Removes an experiment and deselects it if selected"""

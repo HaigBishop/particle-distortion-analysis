@@ -10,11 +10,15 @@ from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.screenmanager import Screen
 from kivy.properties import BooleanProperty
+from kivy.uix.image import Image
+from kivy.graphics.texture import Texture
 
 # Import modules for dealing with files
 from subprocess import Popen as p_open
 from plyer import filechooser
 from cv2 import flip
+import cv2
+import numpy as np
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
@@ -56,23 +60,32 @@ class IE3Window(Screen):
             # Update with current experiment's values
             self.location_label.text = str(current.vid_loc)
             self.update_video()
+            # Update frame label
+            self.frame_label.text = 'Frame: ' + str(current.current_frame) + '/' + str(current.num_frames)
             # Update ion current file select section
             if self.use_ion and current.ion_loc != '':
                 self.ion_location_label.text = str(current.ion_loc)
+                self.ion_view.update_view()
             else:
                 self.ion_location_label.text = 'No file selected'
+                self.ion_view.texture = None
         else:
+            # Update slider
+            self.video_slider.value = 0
             # Reset with defaults
             self.location_label.text = "No experiment selected"
             self.video_widget.texture = None
             self.ion_location_label.text = 'No file selected'
+            # Update frame label
+            self.frame_label.text = ''
+            self.ion_view.texture = None
 
     def update_video(self):
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
             # Get the first frame and flip for Kivy
-            image = flip(current.first_frame, 0)
+            image = flip(current.get_frame(self.video_slider.value_normalized), 0)
             # Convert the image to a format useable for Kivy
             self.video_widget.texture = kivify_image(image)
 
@@ -93,3 +106,35 @@ class IE3Window(Screen):
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
 
+    def on_current_experiment(self, instance, current_experiment):
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Update slider
+            self.video_slider.value = current.current_frame / current.num_frames
+        else:
+            # Update slider
+            self.video_slider.value = 0
+
+
+class IonCurrentView(Image):
+    """The widget which holds the image"""
+
+    def __init__(self, **kwargs):
+        """init method for the image widget in PS2"""
+        # Call Image init method
+        super(IonCurrentView, self).__init__(**kwargs)
+
+    def on_size(self, instance, current_size):
+        self.update_view()
+    
+    def update_view(self):
+        # Get widget dimensions
+        width, height = int(self.width), int(self.height)
+        # Make white image
+        white_image = 255 * np.ones((height, width, 3), dtype=np.uint8)
+        # Draw vertical red line at x position of slider
+        x = int((width - 1) * self.video_slider.value_normalized)
+        cv2.line(white_image, (x, 0), (x, height), (0, 0, 255), 1)
+        # Set as texture
+        self.texture = kivify_image(white_image)

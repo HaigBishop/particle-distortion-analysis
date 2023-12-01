@@ -1,12 +1,13 @@
 import os
 from subprocess import Popen as p_open
+import cv2
 
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.properties import BooleanProperty
 from kivy.app import App
 
-from file_management import first_frame, file_date
+from file_management import first_frame, file_date, get_frame, read_vid
 
 class Experiment():
     """Object which represents a micro aspiration experiment.
@@ -19,7 +20,10 @@ class Experiment():
         self.name = os.path.basename(vid_loc).split('.')[0]
         # Video file
         self.vid_loc = vid_loc
+        self.current_frame = 1
         self.first_frame = first_frame(vid_loc)
+        self.cap = read_vid(vid_loc)
+        self.num_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         # Ion current file
         self.ion_loc = ''
         # Grab the dates of creation of the files
@@ -32,6 +36,13 @@ class Experiment():
 
     def remove_ion_file(self):
         self.ion_loc = ''
+
+    def get_frame(self, prop):
+        """prop is proportion through the video"""
+        # Calculate the frame number based on the proportion
+        target_frame = int((self.num_frames - 1) * prop) + 1
+        self.current_frame = target_frame
+        return get_frame(self.cap, target_frame - 1)
 
 
 class ExperimentBox(Button):
@@ -80,10 +91,14 @@ class ExperimentList(ScrollView):
         super(ExperimentList, self).__init__(**kwargs)
 
     def clear_list(self, boxes_only=False):
-        # While there are still jobs
+        # While there are still boxs
         while len(self.grid_layout.children) != 0:
-            # Remove the first job
-            self.grid_layout.remove_widget(self.grid_layout.children[0])
+            # Get the first box
+            box = self.grid_layout.children[0]
+            # Remove current frame
+            box.experiment.current_frame = 1
+            # Remove the first box
+            self.grid_layout.remove_widget(box)
         # If not only clearing boxes
         if not boxes_only:
             # clear experiment objects

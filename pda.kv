@@ -468,6 +468,9 @@ WindowManager:
     location_label: location_label
     ion_location_label: ion_location_label
     video_widget: video_widget
+    video_slider: video_slider
+    frame_label: frame_label
+    ion_view: ion_view
     GridLayout:
         canvas:
             Color:
@@ -567,6 +570,8 @@ WindowManager:
                         width: 24
                     # Ion current view
                     IonCurrentView:
+                        id: ion_view
+                        video_slider: video_slider
                         size_hint: None, 1
                         width: image_row.width - 48
                     FloatLayout:
@@ -574,11 +579,13 @@ WindowManager:
                         width: 24
                 # Slider
                 Slider:
-                    size_hint: 1, 0.1
+                    id: video_slider
                     min: 0
-                    max: 100
+                    max: 1
+                    size_hint: 1, 0.1
                     cursor_image: 'resources\\white_circle.png'
                     cursor_size: 36, 36
+                    on_value: root.update_fields()
                 # Side buttons and video view
                 GridLayout:
                     cols: 4
@@ -622,6 +629,18 @@ WindowManager:
                             size_hint: 1, 0.25
                         FloatLayout:
                             size_hint:(1,1)
+                            Label:
+                                id: frame_label
+                                color: WHITE
+                                size_hint: (1, None)
+                                height: 40
+                                padding: [20, 0, 0, 10]
+                                halign: 'left'
+                                font_name: 'resources\\Inter.ttf'
+                                text_size: self.size
+                                shorten: True
+                                font_size: 20
+
                     FloatLayout:
                         size_hint:(None,1)
                         width: 12
@@ -680,7 +699,7 @@ WindowManager:
                 font_size: 16
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-6, 50)
-                on_release: root.on_proceed_without()
+                on_release: root.on_proceed()
 
 
 
@@ -844,6 +863,6 @@ WindowManager:
 
 
 
-<IonCurrentView@Image>:
+<IonCurrentView>:
     size_hint: 1, 1
     color: WHITE if self.texture is None else WHITE
