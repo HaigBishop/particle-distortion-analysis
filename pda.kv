@@ -575,6 +575,7 @@ WindowManager:
                     # Ion current view
                     IonCurrentView:
                         id: ion_view
+                        ie3_window: ie3_window
                         video_slider: video_slider
                         size_hint: None, 1
                         width: image_row.width - 48
@@ -589,7 +590,7 @@ WindowManager:
                     size_hint: 1, 0.1
                     cursor_image: 'resources\\white_circle.png'
                     cursor_size: 36, 36
-                    on_value: root.update_fields()
+                    on_value: root.on_slider()
                 # Side buttons and video view
                 GridLayout:
                     cols: 4
@@ -602,35 +603,38 @@ WindowManager:
                         size_hint_x: 0.3
                         rows: 6
                         TangyButton:
-                            disabled:  True
+                            disabled: not root.ready_for_start
                             disabled_color: DARK_GREY
                             text: 'Enter Start'
                             size_hint:(None,None)
                             font_size: 16
                             font_name: 'resources\\Inter.ttf'
                             size_hint: 1, 0.25
+                            on_press: root.add_start_here()
                         FloatLayout:
                             size_hint:(1,None)
                             height: 6
                         TangyButton:
-                            disabled:  True
+                            disabled: root.ready_for_start
                             disabled_color: DARK_GREY
                             text: 'Enter Stop'
                             size_hint:(None,None)
                             font_size: 16
                             font_name: 'resources\\Inter.ttf'
                             size_hint: 1, 0.25
+                            on_press: root.add_stop_here()
                         FloatLayout:
                             size_hint:(1,None)
                             height: 6
                         TangyButton:
-                            disabled:  True
+                            disabled: not root.slider_on_event
                             disabled_color: DARK_GREY
                             text: 'Remove'
                             size_hint:(None,None)
                             font_size: 16
                             font_name: 'resources\\Inter.ttf'
                             size_hint: 1, 0.25
+                            on_press: root.remove_here()
                         FloatLayout:
                             size_hint:(1,1)
                             Label:
@@ -1132,3 +1136,5 @@ WindowManager:
 <IonCurrentView>:
     size_hint: 1, 1
     color: WHITE if self.texture is None else WHITE
+    on_touch_down: root.set_frame(args[1].pos)
+    on_touch_move: root.set_frame(args[1].pos)

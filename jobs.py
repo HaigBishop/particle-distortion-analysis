@@ -29,6 +29,8 @@ class Experiment():
         # Grab the dates of creation of the files
         self.vid_date = file_date(self.vid_loc)
         # Event params (used when selecting events)
+        self.event_start_frame = None
+        self.event_ranges = []
     
     def add_ion_file(self, file_loc):
         self.ion_loc = file_loc
@@ -40,7 +42,7 @@ class Experiment():
     def get_frame(self, prop):
         """prop is proportion through the video"""
         # Calculate the frame number based on the proportion
-        target_frame = int((self.num_frames - 1) * prop) + 1
+        target_frame = int((self.num_frames) * (prop - 10e-8)) + 1 # 1 -> num_frames
         self.current_frame = target_frame
         return get_frame(self.cap, target_frame - 1)
 

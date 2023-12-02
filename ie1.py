@@ -10,13 +10,12 @@ from kivy.uix.screenmanager import Screen
 from kivy.properties import BooleanProperty
 
 # Import modules for dealing with files
-from subprocess import Popen as p_open
 from plyer import filechooser
 from cv2 import flip
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
-from jobs import Experiment, ExperimentBox, ExperimentList
+from jobs import Experiment, ExperimentBox
 from file_management import is_ion_file, is_video_file, kivify_image
 
 class IE1Window(Screen):

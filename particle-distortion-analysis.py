@@ -1,11 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.6)
+Program: Particle Deformation Analysis (Version 0.1.7)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 1/12/2023
+Date: 2/12/2023
 Version Description:
-- Added non-function TD1 page
+- Started to add event selection features on IE3
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
