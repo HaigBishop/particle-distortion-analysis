@@ -9,13 +9,10 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 from datetime import datetime
 import cv2
 import os
-import re
 import numpy as np
 from kivy.graphics.texture import Texture
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
-import matplotlib.pyplot as plt
-from scipy.fft import fft
 
 def kivify_image(image):
     """uses image to make kivy_image
@@ -140,9 +137,9 @@ def read_tdms(file_loc):
     # Return some of it
     return ioncurr_np, strobe_np, ioncurr_len, strobe_len, name, t_step, sample_freq, loop_factor
 
-def design_filter(frequency1, frequency2, fs, filter_order=2):
+def design_filter(frequency1, frequency2, sample_freq, filter_order=2):
     """Filter template function"""
-    nyquist = 0.5 * fs
+    nyquist = 0.5 * sample_freq
     low = frequency1 / nyquist
     high = frequency2 / nyquist
     b, a = butter(filter_order, [low, high], btype='bandstop')
@@ -164,11 +161,11 @@ def fft_and_filter(ioncurr_np, ioncurr_len, sample_freq):
     current_filtered = filtfilt(sos3_a, sos3_b, current_filt2)
     return current_filtered
 
-def normalise_and_smooth_sig(current_filtered):
+def normalise_and_smooth_sig(current_filtered, sample_freq):
     """normalisation is performed after filtering"""
     # Normalise
-    current_norm = current_filtered / current_filtered[int(np.floor(fs*2))]
-    current_norm = current_filtered / np.max(current_filtered[int(np.floor(fs*2)):])
+    current_norm = current_filtered / current_filtered[int(np.floor(sample_freq*2))]
+    current_norm = current_filtered / np.max(current_filtered[int(np.floor(sample_freq*2)):])
     # Smooth signal
     y = savgol_filter(current_norm, 1321, 1)
     return y
