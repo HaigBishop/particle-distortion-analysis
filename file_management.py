@@ -122,20 +122,21 @@ def read_tdms(file_loc):
     group =  tdms_file['Current (nA)']
     ioncurr_channel = group['Voltage']
     strobe_channel = group['Strobe']
-    # Get sampling frequency
-    t_step = ioncurr_channel.properties['wf_increment']
-    sample_freq = 1 / t_step
     # Extract the data from each channel
     ioncurr_np = ioncurr_channel[:]
     strobe_np = strobe_channel[:]
     # Get number of datapoints in each channel
     ioncurr_len = len(ioncurr_channel)
     strobe_len = len(strobe_channel)
+    # Get sampling frequency
+    t_step = ioncurr_channel.properties['wf_increment']
+    sample_freq = 1 / t_step
+    time_scale = np.arange(t_step, t_step * (ioncurr_len + 1), t_step)
     # Convert each channel to dataframes
     ioncurr_df = ioncurr_channel.as_dataframe()
     strobe_df = strobe_channel.as_dataframe()
     # Return some of it
-    return ioncurr_np, strobe_np, ioncurr_len, strobe_len, name, t_step, sample_freq, loop_factor
+    return ioncurr_np, strobe_np, ioncurr_len, strobe_len, name, t_step, sample_freq, loop_factor, time_scale
 
 def design_filter(frequency1, frequency2, sample_freq, filter_order=2):
     """Filter template function"""
