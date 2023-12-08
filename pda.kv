@@ -432,12 +432,12 @@ WindowManager:
             TangyButton:
                 disabled:  len(root.exp_scroll.grid_layout.children) == 0 or not root.ion_files_attached
                 disabled_color: DARK_GREY
-                text: 'Process Current Data'
+                text: 'Proceed With Current Data'
                 size_hint:(None,None)
                 font_size: 22
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-6, 50)
-                on_release: root.on_process_ion()
+                on_release: root.on_proceed(with_ion=True)
             FloatLayout:
                 size_hint:(None,None)
                 size: (right_grid.width-6, 6)
@@ -449,7 +449,7 @@ WindowManager:
                 font_size: 16
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-6, 50)
-                on_release: root.on_proceed_without()
+                on_release: root.on_proceed(with_ion=False)
 
 
 
@@ -909,6 +909,25 @@ WindowManager:
                 on_release: root.on_answer('no')
 
 
+
+
+# =========================================================================================
+
+<ErrorPopup>:
+    error_label: error_label
+    size_hint: 0.6, 0.4
+    auto_dismiss: False
+    title: 'Invalid Data'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            id: error_label
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: 'Okay'
+                on_release: root.on_answer('ok')
 
 
 

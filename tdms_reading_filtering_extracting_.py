@@ -52,7 +52,7 @@ import matplotlib.pyplot as plt
 from scipy.fft import fft
 
 # Get all tdms files in the directory
-directory_path = '210414_tdms'
+directory_path = 'C:/Users/haggi/Documents/School/mAsp/example_data'
 file_paths = [os.path.join(directory_path, file) for file in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, file)) and str(file[-5:]).lower() == '.tdms']
 
 # # For every tdms file
@@ -165,3 +165,5 @@ plt.plot(time_scale, y)
 plt.xlabel('time (s)')
 plt.ylabel('I_n')
 plt.show()
+
+print(file_full_path)

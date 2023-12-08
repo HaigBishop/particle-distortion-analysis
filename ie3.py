@@ -19,6 +19,16 @@ import numpy as np
 from popup_elements import BackPopup
 from jobs import ExperimentBox
 from file_management import kivify_image
+from jobs import DESIRED_SIGNAL_SIZE
+
+# Set constants
+ION_BACKGROUND_SHADE = 245
+ION_SIG_COLOUR = (132, 255, 92)
+ION_CURRENT_FRAME_COLOUR = (212, 212, 212)
+ION_EVENT_COLOUR = (238, 238, 238)
+ION_EVENT_EDGE_COLOUR = (82, 82, 82)
+ION_EVENT_START_COLOUR = (255, 142, 88)
+ION_CURSOR_COLOUR = (0, 0, 255)
 
 class IE3Window(Screen):
     """position -> force screen"""
@@ -268,7 +278,7 @@ class IonCurrentView(Image):
         # Get widget dimensions
         width, height = int(self.width), int(self.height)
         # Make white image
-        white_image = 255 * np.ones((height, width, 3), dtype=np.uint8)
+        image = ION_BACKGROUND_SHADE * np.ones((height, width, 3), dtype=np.uint8)
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
@@ -280,25 +290,39 @@ class IonCurrentView(Image):
             # Draw grey rectangle at x position of slider (for frame)
             x1 = int((width - 1) * (current_frame - 1) / (num_frames))
             x2 = int((width - 1) * (current_frame) / (num_frames))
+            cv2.rectangle(image, (x1, 0), (x2, height), ION_CURRENT_FRAME_COLOUR, -1)
             # Draw vertical blue box at frame of start of event
-            cv2.rectangle(white_image, (x1, 0), (x2, height), (212, 212, 212), -1)
-            # Draw start line
             if event_start_frame is not None:
                 x1 = int((width - 1) * (event_start_frame - 1) / (num_frames))
                 x2 = int((width - 1) * (event_start_frame) / (num_frames))
                 # Draw vertical blue box at frame of start of event
-                cv2.rectangle(white_image, (x1, 0), (x2, height), (255, 172, 89), -1)
+                cv2.rectangle(image, (x1, 0), (x2, height), ION_EVENT_START_COLOUR, -1)
             # Draw event ranges
             for start_frame, stop_frame in ranges:
                 start_x1 = int((width - 1) * (start_frame - 1) / (num_frames))
                 stop_x2 = int((width - 1) * (stop_frame) / (num_frames))
                 # Draw range
-                cv2.rectangle(white_image, (start_x1, 0), (stop_x2 - 1, height), (202, 202, 202), -1)
+                cv2.rectangle(image, (start_x1, 0), (stop_x2 - 1, height), ION_EVENT_COLOUR, -1)
                 # Draw edges
-                cv2.line(white_image, (start_x1, 0), (start_x1, height), (42, 42, 42), 1)
-                cv2.line(white_image, (stop_x2, 0), (stop_x2, height), (42, 42, 42), 1)
+                cv2.line(image, (start_x1, 0), (start_x1, height), ION_EVENT_EDGE_COLOUR, 1)
+                cv2.line(image, (stop_x2, 0), (stop_x2, height), ION_EVENT_EDGE_COLOUR, 1)
+            # If using the ion current, draw it
+            if self.ie3_window.use_ion:
+                # Normalize the signal values to fit within the height of the image
+                gap_x, gap_y = 1, 3 # this gives some breathing room
+                # (use downsampled data)
+                sig_min, sig_max = current.downsampled_ioncurr_sig.min(), current.downsampled_ioncurr_sig.max()
+                normalized_signal = (current.downsampled_ioncurr_sig - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
+                # Split the data evenly into the windows
+                windows = np.array_split(normalized_signal, width - gap_x * 2)
+                # For each pixel on the x-axis corresponding to a window of signal
+                for x in range(width - gap_x * 2):
+                    # Get the range of values here
+                    min_sig, max_sig = int(windows[x].min()), int(windows[x].max())
+                    # Draw a verticle line on that x value
+                    cv2.line(image, (x + gap_x, min_sig), (x + gap_x, max_sig), ION_SIG_COLOUR, 1)
         # Draw vertical red line at x position of slider
         x = int((width - 1) * self.video_slider.value_normalized)
-        cv2.line(white_image, (x, 0), (x, height), (0, 0, 255), 1)
+        cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)
         # Set as texture
-        self.texture = kivify_image(white_image)
+        self.texture = kivify_image(image)

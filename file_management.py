@@ -41,23 +41,57 @@ def file_date(file_loc):
     return date
 
 def is_video_file(file_loc):
+    """Checks if the file has a correct extension and is readable."""
     # Extract the file extension
     file_extension = os.path.splitext(file_loc)[1].lower()
     # List of common video file extensions
     video_extensions = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv']
-    # Check if the file extension is in the list of video extensions
-    return file_extension in video_extensions
+    # If the file extension is in the list of video extensions
+    if file_extension in video_extensions:
+        # Try open and read file
+        try:
+            # Read file into TdmsFile object
+            read_vid(file_loc)
+        except Exception as e:
+            # Failed to read file
+            print("Failed to read video file: ", e)
+        else:
+            # Is readable video file!
+            return True
+    else:
+        # Incorrect extension
+        return False
+
+def is_ion_file(file_loc):
+    """Checks if the file has the correct extension and is readable, etc."""
+    # Extract the file extension
+    file_extension = os.path.splitext(file_loc)[1].lower()
+    # If TDMS extension
+    if file_extension == '.tdms':
+        # Try open and read file
+        try:
+            # Read file into TdmsFile object
+            tdms_file = TdmsFile.read(file_loc)
+            file_properties = tdms_file._properties
+            name = file_properties['name']
+            loop_factor = file_properties['Loop Factor']
+            group =  tdms_file['Current (nA)']
+            ioncurr_channel = group['Voltage']
+            strobe_channel = group['Strobe']
+            ioncurr_channel.properties['wf_increment']
+        except Exception:
+            # Failed to read file
+            print("Failed to read TDMS file.")
+            return False
+        else:
+            # Is ion current TDMS file!
+            return True
+    else:
+        # Incorrect extension
+        return False
 
 def is_event_file(file_loc):
     return False
-
-def is_ion_file(file_loc):
-    # Extract the file extension
-    file_extension = os.path.splitext(file_loc)[1].lower()
-    # List of common video file extensions
-    ion_extensions = ['.tdms']
-    # Check if the file extension is in the list of video extensions
-    return file_extension in ion_extensions
 
 def read_vid(video_loc):
     # Open the video file
@@ -87,19 +121,16 @@ def first_frame(video_loc):
     return frame
 
 def get_frame(cap, target_frame):
+    """Returns the specified frame in the video (cap)."""
     # Set the video capture object to the target frame
     cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-    
     # Read the frame from the video
     ret, frame = cap.read()
-    
     # Check if the frame is read successfully
     if not ret:
         print("Error: Could not read frame.")
         return None
-    
     return frame
-
 
 def read_tdms(file_loc):
     """Starter function to read a TDMS file.
@@ -108,15 +139,15 @@ def read_tdms(file_loc):
     tdms_file = TdmsFile.read(file_loc)
     # Get properties for this tdms file!
     file_properties = tdms_file._properties
-    name = file_properties['name']
-    author = file_properties['Author']
-    description = file_properties['Description']
-    time = file_properties['datetime']
-    sample_rate = file_properties['Sampling Rate']
-    adj_sample_rate = file_properties['Adj. Sampling Rate']
-    fps = file_properties['FPS']
-    adj_fps = file_properties['Adj. FPS']
-    exposure_time = file_properties['Camera Exposure Time (ms)']
+    # name = file_properties['name']
+    # author = file_properties['Author']
+    # description = file_properties['Description']
+    # time = file_properties['datetime']
+    # sample_rate = file_properties['Sampling Rate']
+    # adj_sample_rate = file_properties['Adj. Sampling Rate']
+    # fps = file_properties['FPS']
+    # adj_fps = file_properties['Adj. FPS']
+    # exposure_time = file_properties['Camera Exposure Time (ms)']
     loop_factor = file_properties['Loop Factor']
     # Extract each group and channel
     group =  tdms_file['Current (nA)']
@@ -133,20 +164,20 @@ def read_tdms(file_loc):
     sample_freq = 1 / t_step
     time_scale = np.arange(t_step, t_step * (ioncurr_len + 1), t_step)
     # Convert each channel to dataframes
-    ioncurr_df = ioncurr_channel.as_dataframe()
-    strobe_df = strobe_channel.as_dataframe()
+    # ioncurr_df = ioncurr_channel.as_dataframe()
+    # strobe_df = strobe_channel.as_dataframe()
     # Return some of it
-    return ioncurr_np, strobe_np, ioncurr_len, strobe_len, name, t_step, sample_freq, loop_factor, time_scale
+    return ioncurr_np, strobe_np, ioncurr_len, strobe_len, t_step, sample_freq, loop_factor, time_scale
 
 def design_filter(frequency1, frequency2, sample_freq, filter_order=2):
-    """Filter template function"""
+    """Template for a bandstop filter."""
     nyquist = 0.5 * sample_freq
     low = frequency1 / nyquist
     high = frequency2 / nyquist
     b, a = butter(filter_order, [low, high], btype='bandstop')
     return b, a
 
-def fft_and_filter(ioncurr_np, ioncurr_len, sample_freq):
+def fft_and_filter(ioncurr_np, sample_freq):
     """This function does what FFTnFilter.m does...
      - FFT shows mains hum (DOESNT ACTUALLY APPEAR TO USE THIS SO DELETED IT)
      - filter uses several bandstop filters     
@@ -170,3 +201,4 @@ def normalise_and_smooth_sig(current_filtered, sample_freq):
     # Smooth signal
     y = savgol_filter(current_norm, 1321, 1)
     return y
+

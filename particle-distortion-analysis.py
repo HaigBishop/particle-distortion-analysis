@@ -1,11 +1,13 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.8)
+Program: Particle Deformation Analysis (Version 0.1.9)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 7/12/2023
+Date: 8/12/2023
 Version Description:
-- Adds functions for extracting and filtering TDMS files
+- Enabled loading of TDMS files into experiment objects
+- Visualisation of ion current signals
+- Automatic selection of TDMS files if they have the same name and directory as video
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -35,6 +37,7 @@ from kivy.core.window import Window
 from kivy.core.window import Keyboard
 from kivy.uix.screenmanager import SlideTransition
 from kivy.properties import ListProperty, ObjectProperty
+
 
 # Import local modules
 from ie1 import *

@@ -8,10 +8,13 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 from kivy.app import App
 from kivy.uix.screenmanager import Screen
 from kivy.properties import BooleanProperty
+from kivy.clock import Clock
 
 # Import modules for dealing with files
 from plyer import filechooser
+import cv2
 from cv2 import flip
+import os
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
@@ -29,16 +32,21 @@ class IE1Window(Screen):
         # Save app as an attribute
         self.app = App.get_running_app()
 
-    def on_process_ion(self):
-        """called by pressing the 'Process Current Data' button."""
-        pass
-
-    def on_proceed_without(self):
-        """called by pressing the 'Proceed Without Current Data' button."""
-        # Check if the selected data is valid
+    def on_proceed(self, with_ion=False):
+        """called by pressing one of the Proceed buttons.
+        - if it was the 'Proceed Without Current Data' button:
+            with_ion is False 
+        - if it was the 'Proceed With Current Data' button:
+            with_ion is True """
+        # Check if the selected video data is valid
         vid_errors = self.check_vids()
+        # Check if the selected ion data is valid (if using that data)
+        if with_ion:
+            ion_errors = self.check_ions()
+        else:
+            ion_errors = []
         # If there are issues with the data
-        if vid_errors != []:
+        if vid_errors + ion_errors != []:
             # Make pop up - alerts of invalid data
             popup = ErrorPopup()
             # Adjust the text on the popup
@@ -46,9 +54,9 @@ class IE1Window(Screen):
             popup.open()
         # If no issues with the data
         else:
-            # Set use_ion to False
+            # Set use_ion
             ie3_window = self.app.root.get_screen("IE3")
-            ie3_window.use_ion = False
+            ie3_window.use_ion = with_ion
             # Change screen to IE3
             self.app.root.current = "IE3"
             self.app.root.transition.direction = "left"
@@ -56,7 +64,81 @@ class IE1Window(Screen):
             ie3_window.load_experiments()
 
     def check_vids(self):
-        return []
+        """Checks that the video is suitable.
+        We know it is a video file and can be opened, but let's also check:
+        - number of frames is 3 or more
+        - resolution is more than 256x256
+        - number of channels is 1 or 3
+        - it is not a duplicate file"""
+        errors = []
+        name_list = []
+        vid_loc_list = []
+        # Loop all experiments
+        for exp in self.app.experiments:
+            cap = exp.cap
+            # Check number of frames
+            num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if num_frames < 3:
+                errors.append("invalid number of video frames (" + str(exp.name) + ")\n")
+            # Check resolution
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            if width < 128 or height < 128:
+                errors.append("invalid video resolution (" + str(exp.name) + ")\n")
+            # Check number of channels
+            # (by getting the shape of the first frame)
+            _, frame = cap.read()
+            _, _, num_channels = frame.shape
+            if int(num_channels) not in [1, 3]:
+                errors.append("invalid number of video channels (" + str(exp.name) + ")\n")
+            # Add this job's name and file loc to lists (to check for duplicates)
+            name_list.append(exp.name)
+            vid_loc_list.append(exp.vid_loc)
+        # Check for duplicate files
+        if len(vid_loc_list) != len(set(vid_loc_list)):
+            # Duplicate files
+            errors.append(" • duplicate files\n")
+        # Check for duplicate names
+        elif len(name_list) != len(set(name_list)):
+            # Duplicate names
+            errors.append(" • duplicate names\n")
+        # Return the errors which have been found
+        return list(set(errors))
+
+    def check_ions(self):
+        """Checks that the ion current data is suitable.
+        We know it is a TDMS file and can be opened, but let's also check:
+        - has 3 or more samples
+        - it is not a duplicate file"""
+        errors = []
+        ion_loc_list = []
+        # Loop all experiments
+        for exp in self.app.experiments:
+            # Check number of samples
+            if exp.ioncurr_len < 3 or exp.strobe_len < 3:
+                errors.append("invalid number of ion current samples (" + str(exp.name) + ")\n")
+            # Add this job's ion file loc to list (to check for duplicates)
+            ion_loc_list.append(exp.ion_loc)
+        # Check for duplicate files
+        if len(ion_loc_list) != len(set(ion_loc_list)):
+            # Duplicate files
+            errors.append(" • duplicate files\n")
+        # Return the errors which have been found
+        return list(set(errors))
+    
+    def try_select_ions(self, *args):
+        """For every experiment, if it doesn't already have an ion current file...
+        Look for a tdms file of the same name and try use that."""
+        # For all experiments
+        for exp in self.app.experiments:
+            # If it has no ion current file
+            if exp.ion_loc == '' and  exp.vid_loc != '':
+                # Swap the file extension to tdms
+                i = str(exp.vid_loc).rfind(".") + 1
+                ion_loc = str(exp.vid_loc)[:i] + 'tdms'
+                if os.path.isfile(ion_loc):
+                    # Load that shit!
+                    self.ion_selected([ion_loc], experiment=exp)
 
     def select_vid_files(self):
         """called when [select video file(s)] button is pressed
@@ -125,6 +207,8 @@ class IE1Window(Screen):
             # Enable layouts
             self.param_grid_layout.disabled = False
             self.name_grid_layout.disabled = False
+            # Schedule to try to select an ion file for these new experiments
+            Clock.schedule_once(self.try_select_ions, 0.01)
         # Update everything visually
         self.update_fields()
         # If there was a failed selection
@@ -140,15 +224,17 @@ class IE1Window(Screen):
             # Update location label
             self.location_label.text = error_string
 
-    def ion_selected(self, selection):
+    def ion_selected(self, selection, experiment=None, *args):
+        if experiment is None:
+            experiment = self.app.current_experiment
         # Set booleans to test if selection is valid
         there_is_current, invalid_type = True, False
         for file_loc in selection:
             if is_ion_file(file_loc):
                 # If there is a current experiment
-                if self.app.current_experiment is not None:
+                if experiment is not None:
                     # Add it to the current experiment
-                    self.app.current_experiment.add_ion_file(file_loc)
+                    experiment.add_ion_file(file_loc)
                 else:
                     there_is_current = False
             # It is invalid type!
@@ -182,7 +268,6 @@ class IE1Window(Screen):
     def update_ion_files_attached(self):
         any_exps = len(self.app.experiments) != 0
         self.ion_files_attached = any_exps and all([exp.ion_loc != '' for exp in self.app.experiments])
-
 
     def update_fields(self):
         """updates the text inputs and the 'location label'

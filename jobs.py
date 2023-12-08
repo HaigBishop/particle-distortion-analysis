@@ -1,13 +1,22 @@
 import os
 from subprocess import Popen as p_open
 import cv2
+from scipy.signal import decimate
 
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.properties import BooleanProperty
 from kivy.app import App
+from scipy.interpolate import interp1d
 
-from file_management import first_frame, file_date, get_frame, read_vid
+from file_management import *
+
+
+
+# Desired size to downsample signal data
+# raw data is not discarded, this is only used for display
+# e.g. 250,000 yeilds new data in the range of 250,000-500,000
+DESIRED_SIGNAL_SIZE = 250000 
 
 class Experiment():
     """Object which represents a micro aspiration experiment.
@@ -17,27 +26,60 @@ class Experiment():
     
     def __init__(self, vid_loc):
         # General
-        self.name = os.path.basename(vid_loc).split('.')[0]
+        self.name, self.file_extension = os.path.splitext(os.path.basename(vid_loc))
         # Video file
         self.vid_loc = vid_loc
         self.current_frame = 1
         self.first_frame = first_frame(vid_loc)
         self.cap = read_vid(vid_loc)
         self.num_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        # Ion current file
-        self.ion_loc = ''
         # Grab the dates of creation of the files
         self.vid_date = file_date(self.vid_loc)
+
+        # Ion current file
+        self.ion_loc = ''
+        self.ion_date = None
+        # Ion current data
+        self.ioncurr_sig, self.strobe_sig, self.ioncurr_len, self.strobe_len = None, None, None, None
+        self.downsampled_ioncurr_sig, self.decimation_factor = None, None
+        # Ion current time metadata
+        self.t_step, self.sample_freq, self.loop_factor, self.time_scale = None, None, None, None
+
         # Event params (used when selecting events)
         self.event_start_frame = None
         self.event_ranges = []
     
     def add_ion_file(self, file_loc):
+        """Reads a TDMS file and holds information in this object.
+        - We can assume that the given file is readable as an ion current file"""
+        # Save file loc and date
         self.ion_loc = file_loc
         self.ion_date = file_date(self.ion_loc)
+        # Read the file and extract data
+        self.ioncurr_sig, self.strobe_sig, self.ioncurr_len, self.strobe_len, self.t_step, self.sample_freq, self.loop_factor, self.time_scale = read_tdms(file_loc)
+        # Filter the data
+        self.ioncurr_sig = fft_and_filter(self.ioncurr_sig, self.sample_freq)
+        # Normalise and smooth signal
+        self.ioncurr_sig = normalise_and_smooth_sig(self.ioncurr_sig, self.sample_freq)
+        # Downsample if needed!
+        self.decimation_factor = 1
+        self.downsampled_ioncurr_sig = self.ioncurr_sig
+        # While too big
+        while len(self.downsampled_ioncurr_sig) > DESIRED_SIGNAL_SIZE * 1.99:
+            # Make 2x smaller
+            self.downsampled_ioncurr_sig = decimate(self.downsampled_ioncurr_sig, 2)
+            self.decimation_factor *= 2
 
     def remove_ion_file(self):
+        """Resets the ion current related data."""
+        # Ion current file
         self.ion_loc = ''
+        self.ion_date = None
+        # Ion current data
+        self.ioncurr_sig, self.strobe_sig, self.ioncurr_len, self.strobe_len = None, None, None, None
+        self.downsampled_ioncurr_sig, self.decimation_factor = None, None
+        # Ion current time metadata
+        self.t_step, self.sample_freq, self.loop_factor, self.time_scale = None, None, None, None
 
     def get_frame(self, prop):
         """prop is proportion through the video"""
