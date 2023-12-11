@@ -19,7 +19,6 @@ import numpy as np
 from popup_elements import BackPopup
 from jobs import ExperimentBox
 from file_management import kivify_image
-from jobs import DESIRED_SIGNAL_SIZE
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -37,7 +36,9 @@ class IE3Window(Screen):
     # True when the slider is positioned on an event
     slider_on_event = BooleanProperty(False) 
     # True when ready for start - False when ready for stop
-    ready_for_start = BooleanProperty(True) 
+    ready_for_start = BooleanProperty(True)
+    # Will display the downsampled signal if True
+    use_downsampled = BooleanProperty(True) 
 
 
     def __init__(self, **kwargs):
@@ -49,6 +50,10 @@ class IE3Window(Screen):
 
     def on_proceed(self):
         """called by pressing the 'Proceed' button."""
+        # self.use_downsampled = not self.use_downsampled
+        # print(self.use_downsampled)
+        # # Update everything visually
+        # self.update_fields()
         pass
 
     def load_experiments(self):
@@ -308,17 +313,29 @@ class IonCurrentView(Image):
                 cv2.line(image, (stop_x2, 0), (stop_x2, height), ION_EVENT_EDGE_COLOUR, 1)
             # If using the ion current, draw it
             if self.ie3_window.use_ion:
+                # Get the signal (either original or downsampled)
+                signal = current.downsampled_ioncurr_sig if self.ie3_window.use_downsampled else current.ioncurr_sig
                 # Normalize the signal values to fit within the height of the image
                 gap_x, gap_y = 1, 3 # this gives some breathing room
                 # (use downsampled data)
-                sig_min, sig_max = current.downsampled_ioncurr_sig.min(), current.downsampled_ioncurr_sig.max()
-                normalized_signal = (current.downsampled_ioncurr_sig - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
-                # Split the data evenly into the windows
-                windows = np.array_split(normalized_signal, width - gap_x * 2)
+                sig_min, sig_max = signal.min(), signal.max()
+                normalized_signal = (signal - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
+
+                """OLD CODE MIGHT DISCARD IF REPLACEMENT GOOD"""
+                # # Split the data evenly into the windows
+                # windows = np.array_split(normalized_signal, width - gap_x * 2)
+                # # For each pixel on the x-axis corresponding to a window of signal
+                # for x in range(width - gap_x * 2):
+                #     # Get the range of values here
+                #     min_sig, max_sig = int(windows[x].min()), int(windows[x].max())
+                #     # Draw a verticle line on that x value
+                #     cv2.line(image, (x + gap_x, min_sig), (x + gap_x, max_sig), ION_SIG_COLOUR, 1)
+
+                min_array, max_array = split_min_max(normalized_signal, width - gap_x * 2)
                 # For each pixel on the x-axis corresponding to a window of signal
                 for x in range(width - gap_x * 2):
                     # Get the range of values here
-                    min_sig, max_sig = int(windows[x].min()), int(windows[x].max())
+                    min_sig, max_sig = int(min_array[x]), int(max_array[x])
                     # Draw a verticle line on that x value
                     cv2.line(image, (x + gap_x, min_sig), (x + gap_x, max_sig), ION_SIG_COLOUR, 1)
         # Draw vertical red line at x position of slider
@@ -326,3 +343,17 @@ class IonCurrentView(Image):
         cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)
         # Set as texture
         self.texture = kivify_image(image)
+
+def split_min_max(signal, width):
+    # Define arrays to return
+    min_array, max_array = np.zeros(width), np.zeros(width)
+    # Get the size of each division (might be decimal)
+    ideal_window_size = len(signal) / width
+    # For each pixel across width
+    j = 0
+    for i in range(width):
+        # Grab the 
+        current_window = signal[int(j) : int(j + ideal_window_size)]
+        min_array[i], max_array[i] = current_window.min(), current_window.max()
+        j += ideal_window_size
+    return min_array, max_array

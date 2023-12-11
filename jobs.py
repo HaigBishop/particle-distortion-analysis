@@ -18,6 +18,29 @@ from file_management import *
 # e.g. 250,000 yeilds new data in the range of 250,000-500,000
 DESIRED_SIGNAL_SIZE = 250000 
 
+def find_optimal_decimation_factor(signal, max_factor=10):
+    """
+    Downsample the signal and find the largest decimation factor that does not
+    significantly affect the signal. Returns the downsampled signal and the optimal
+    decimation factor.
+    """
+
+    def is_factor(n, factor):
+        return n % factor == 0
+
+    original_length = len(signal)
+    optimal_factor = 1
+    downsampled_signal = signal
+
+    for factor in range(2, max_factor + 1):
+        if is_factor(original_length, factor):
+            decimated_signal = decimate(signal, factor)
+            if np.allclose(signal, decimate(decimated_signal, 1/factor)):
+                downsampled_signal = decimated_signal
+                optimal_factor = factor
+
+    return downsampled_signal, optimal_factor
+
 class Experiment():
     """Object which represents a micro aspiration experiment.
     There are many events that occur within one experiment.

@@ -1,13 +1,12 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.9)
+Program: Particle Deformation Analysis (Version 0.1.10)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 8/12/2023
+Date: 11/12/2023
 Version Description:
-- Enabled loading of TDMS files into experiment objects
-- Visualisation of ion current signals
-- Automatic selection of TDMS files if they have the same name and directory as video
+- Loading feature
+- Improved down sampling
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -82,13 +81,13 @@ class MainWindow(Screen):
         if self.info_layout.disabled:
             # Turn on
             self.info_layout.disabled = False
-            self.info_layout.pos = (0, 0)
+            self.info_layout.x = 0
             self.main_grid.disabled = True
         # If on
         else:
             # Turn off
             self.info_layout.disabled = True
-            self.info_layout.pos = (99999, 99999)  # Sends it far away
+            self.info_layout.x = 69420  # Sends it far away
             self.main_grid.disabled = False
             self.help_scroll.scroll_y = 1  # Resets the scroll
 

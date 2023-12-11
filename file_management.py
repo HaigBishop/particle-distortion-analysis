@@ -143,7 +143,7 @@ def read_tdms(file_loc):
     # author = file_properties['Author']
     # description = file_properties['Description']
     # time = file_properties['datetime']
-    # sample_rate = file_properties['Sampling Rate']
+    sample_rate = file_properties['Sampling Rate']
     # adj_sample_rate = file_properties['Adj. Sampling Rate']
     # fps = file_properties['FPS']
     # adj_fps = file_properties['Adj. FPS']
@@ -167,7 +167,7 @@ def read_tdms(file_loc):
     # ioncurr_df = ioncurr_channel.as_dataframe()
     # strobe_df = strobe_channel.as_dataframe()
     # Return some of it
-    return ioncurr_np, strobe_np, ioncurr_len, strobe_len, t_step, sample_freq, loop_factor, time_scale
+    return ioncurr_np, strobe_np, ioncurr_len, strobe_len, t_step, sample_rate, loop_factor, time_scale
 
 def design_filter(frequency1, frequency2, sample_freq, filter_order=2):
     """Template for a bandstop filter."""
@@ -196,8 +196,7 @@ def fft_and_filter(ioncurr_np, sample_freq):
 def normalise_and_smooth_sig(current_filtered, sample_freq):
     """normalisation is performed after filtering"""
     # Normalise
-    current_norm = current_filtered / current_filtered[int(np.floor(sample_freq*2))]
-    current_norm = current_filtered / np.max(current_filtered[int(np.floor(sample_freq*2)):])
+    current_norm = current_filtered / np.max(current_filtered)
     # Smooth signal
     y = savgol_filter(current_norm, 1321, 1)
     return y

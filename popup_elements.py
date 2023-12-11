@@ -7,6 +7,7 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Kivy imports
 from kivy.app import App
 from kivy.uix.popup import Popup
+from kivy.uix.floatlayout import FloatLayout
 
 
 class BackPopup(Popup):

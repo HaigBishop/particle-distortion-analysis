@@ -24,6 +24,7 @@ from file_management import is_ion_file, is_video_file, kivify_image
 class IE1Window(Screen):
     """position -> force screen"""
     ion_files_attached = BooleanProperty(False)
+    is_loading = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         """init method for IE1 screen"""
@@ -31,6 +32,13 @@ class IE1Window(Screen):
         super(IE1Window, self).__init__(**kwargs)
         # Save app as an attribute
         self.app = App.get_running_app()
+
+    def schedule_with_load(self, function):
+        """Schedules a function call and sets loading to True."""
+        # Start loading
+        self.is_loading = True
+        # Schedule function
+        Clock.schedule_once(function)
 
     def on_proceed(self, with_ion=False):
         """called by pressing one of the Proceed buttons.
@@ -139,8 +147,10 @@ class IE1Window(Screen):
                 if os.path.isfile(ion_loc):
                     # Load that shit!
                     self.ion_selected([ion_loc], experiment=exp)
+        # Done loading
+        self.is_loading = False
 
-    def select_vid_files(self):
+    def select_vid_files(self, *args):
         """called when [select video file(s)] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
@@ -154,7 +164,7 @@ class IE1Window(Screen):
             multiple=True
         )
 
-    def select_ion_file(self):
+    def select_ion_file(self, *args):
         """called when [select ion current file] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
@@ -201,6 +211,8 @@ class IE1Window(Screen):
             # Disable layouts
             self.param_grid_layout.disabled = True
             self.name_grid_layout.disabled = True
+            # Done loading
+            self.is_loading = False
         else:
             # Set the last experiment added as the current job
             self.app.select_experiment(new_experiment)
@@ -208,7 +220,7 @@ class IE1Window(Screen):
             self.param_grid_layout.disabled = False
             self.name_grid_layout.disabled = False
             # Schedule to try to select an ion file for these new experiments
-            Clock.schedule_once(self.try_select_ions, 0.01)
+            Clock.schedule_once(self.try_select_ions)
         # Update everything visually
         self.update_fields()
         # If there was a failed selection
@@ -256,6 +268,8 @@ class IE1Window(Screen):
                 error_string += "Incorrect file type(s)"
             # Update location label
             self.ion_location_label.text = error_string
+        # Done loading
+        self.is_loading = False
 
     def on_ion_x_btn(self):
         """Called when the 'x' button next two the ion current file selection is pressed."""

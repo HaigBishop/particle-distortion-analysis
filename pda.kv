@@ -311,7 +311,7 @@ WindowManager:
                         font_size: 18
                         pos_hint: {'x':.095, 'y':.3}
                         text:'select video(s)'
-                        on_release: root.select_vid_files()
+                        on_release: root.schedule_with_load(root.select_vid_files)
                     Label:
                         id: location_label
                         color: WHITE
@@ -364,7 +364,7 @@ WindowManager:
                             font_size: 18
                             pos_hint: {'x':.06, 'y':.83}
                             text:'select ion current file'
-                            on_release: root.select_ion_file()
+                            on_release: root.schedule_with_load(root.select_ion_file)
                             font_name: 'resources\\Inter.ttf'
                         Button:
                             text: '×'
@@ -450,6 +450,9 @@ WindowManager:
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-6, 50)
                 on_release: root.on_proceed(with_ion=False)
+    LoadingScreen:
+        disabled: not root.is_loading
+        x: 0 if root.is_loading else 69420
 
 
 
@@ -1157,3 +1160,22 @@ WindowManager:
     color: WHITE if self.texture is None else WHITE
     on_touch_down: root.set_frame(args[1].pos)
     on_touch_move: root.set_frame(args[1].pos)
+
+
+
+# =========================================================================================
+<LoadingScreen@FloatLayout>:
+    size_hint: (1, 1)
+    pos_hint: {'center_y': 0.5}
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.4  # Grey color with 50% opacity
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        size_hint: (0.2, 0.2)
+        text: 'Loading...'
+        font_size: 38
+        font_name: 'resources\\Inter.ttf'
