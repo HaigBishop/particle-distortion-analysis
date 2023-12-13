@@ -1,12 +1,15 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.10)
+Program: Particle Deformation Analysis (Version 0.1.11)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 11/12/2023
+Date: 13/12/2023
 Version Description:
-- Loading feature
-- Improved down sampling
+- Show thumbnail bar
+- added colour to buttons etc.
+- only left click for cursor on ion current data
+- allow click on thumbnails
+- show red line on thumbnails
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -60,6 +63,35 @@ class WindowManager(ScreenManager):
         self.transition = SlideTransition()
         # Call ScreenManager init method
         super(ScreenManager, self).__init__(**kwargs)
+        # Bind key strokes to methods
+        Window.bind(on_key_down=self.on_key_down, on_key_up=self.on_key_up)
+        # Save a reference to the app object
+        self.app = App.get_running_app()
+
+    def on_key_down(self, _1, keycode, _2, _3, modifiers):
+        """called when the user presses a key
+        - decodes the key e.g. '241' -> 'e'
+        - send it to the current screen if needed"""
+        # Decodes the key e.g. '241' -> 'e'
+        key = Keyboard.keycode_to_string(Keyboard, keycode)
+        # If current window is x
+        if self.app.root.current == "":
+            # Call x
+            pass
+
+    def on_key_up(self, _1, keycode, _2):
+        """called when the user stops pressing a key
+        - decodes the key e.g. '241' -> 'e'
+        - send it to the current screen if needed"""
+        # Decodes the key e.g. '241' -> 'e'
+        key = Keyboard.keycode_to_string(Keyboard, keycode)
+        # Get current screen
+        current_screen = self.app.root.current
+        # If current window is IE3
+        if current_screen == "IE3":
+            # Send key up command to that screen
+            screen = self.app.root.get_screen(current_screen)
+            screen.on_key_up(key)
 
 
 class MainWindow(Screen):

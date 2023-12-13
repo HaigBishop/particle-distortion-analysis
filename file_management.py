@@ -8,6 +8,7 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Import modules used for dealing with files
 from datetime import datetime
 import cv2
+from cv2 import flip
 import os
 import numpy as np
 from kivy.graphics.texture import Texture
@@ -20,6 +21,7 @@ def kivify_image(image):
     - kivy_image is a kivy compatible texture"""
     # If there is an image
     if isinstance(image, np.ndarray):
+        image = flip(image, 0)
         # Make kivy version
         kivy_image = Texture.create(
             size=(image.shape[1], image.shape[0]), colorfmt="bgr"
@@ -201,3 +203,42 @@ def normalise_and_smooth_sig(current_filtered, sample_freq):
     y = savgol_filter(current_norm, 1321, 1)
     return y
 
+def split_min_max(signal, width):
+    """Takes a signal (1D numpy array) splits it width times and gets min max for each split.
+    e.g. split_min_max([1,2,3,4,5,6], 3) -> (array([1., 3., 5.]), array([2., 4., 6.]))
+    Can also handle uneven splits and width > len(signal)"""
+    # Define arrays to return
+    min_array, max_array = np.zeros(width), np.zeros(width)
+    # Get the size of each division (might be decimal)
+    ideal_window_size = len(signal) / width
+    # For each pixel across width
+    j = 0
+    for i in range(width):
+        # Set start and end of split range
+        a = int(j)
+        b = int(j + ideal_window_size)
+        # If they don't cover a whole value include the next one
+        b = b + 1 if a == b else b
+        # Get split range and their min and max value
+        current_window = signal[a:b]
+        min_array[i], max_array[i] = current_window.min(), current_window.max()
+        # Move to the next split
+        j += ideal_window_size
+    return min_array, max_array
+
+
+def downsample_image(image, min_width, min_height):
+    min_width = 150 if min_width < 150 else min_width
+    min_height = 150 if min_height < 150 else min_height
+    # Get the original image dimensions
+    height, width = image.shape[:2]
+    # Choose the maximum scale factor to maintain aspect ratio
+    scale_x = max(1, width // min_width)
+    scale_y = max(1, height // min_height)
+    scale_factor = max(scale_x, scale_y)
+    # Calculate the new dimensions
+    new_width = width // scale_factor
+    new_height = height // scale_factor
+    # Resize the image using the calculated dimensions
+    resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+    return resized_image

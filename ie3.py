@@ -7,18 +7,18 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Kivy imports
 from kivy.app import App
 from kivy.uix.screenmanager import Screen
-from kivy.properties import BooleanProperty
+from kivy.properties import BooleanProperty, NumericProperty
 from kivy.uix.image import Image
+from kivy.uix.boxlayout import BoxLayout
 
 # Import modules for dealing with files
-from cv2 import flip
 import cv2
 import numpy as np
 
 # Import local modules
 from popup_elements import BackPopup
 from jobs import ExperimentBox
-from file_management import kivify_image
+from file_management import kivify_image, split_min_max, downsample_image
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -86,6 +86,8 @@ class IE3Window(Screen):
             else:
                 self.ion_location_label.text = 'No file selected'
                 self.ion_view.update_view()
+            # Update the thumbnail cursor
+            self.thumbnail_bar.cursor_x = int((self.thumbnail_bar.width - 1) * self.video_slider.value_normalized)
         else:
             # Update slider
             self.video_slider.value = 0
@@ -96,14 +98,16 @@ class IE3Window(Screen):
             # Update frame label
             self.frame_label.text = ''
             self.ion_view.texture = None
+            # Update the thumbnail cursor
+            self.thumbnail_bar.cursor_x = 0
 
     def update_video(self):
         """Update the video view by displaying the current frame."""
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            # Get the first frame and flip for Kivy
-            image = flip(current.get_frame(self.video_slider.value_normalized), 0)
+            # Get frame to use
+            image, frame_num = current.get_frame(self.video_slider.value_normalized)
             # Convert the image to a format useable for Kivy
             self.video_widget.texture = kivify_image(image)
 
@@ -208,6 +212,24 @@ class IE3Window(Screen):
         # Update everything visually
         self.update_fields()
 
+    def on_key_up(self, key):
+        """called when a key is released up
+        - there are many results depending on the key"""
+        # If there is a current experiment
+        if self.app.current_experiment is not None:
+            # If the 's' key is released
+            if key == "s":
+                # Add Stop or start depending which is next
+                if self.ready_for_start:
+                    self.add_start_here()
+                else:
+                    self.add_stop_here()
+            # If the 'r' key is released
+            elif key == "r" and self.slider_on_event:
+                # Remove event 
+                self.remove_here()
+        return True
+
     def update_slider_on_event(self):
         """Updates the self.slider_on_event boolean."""
         on_event = False
@@ -244,7 +266,9 @@ class IE3Window(Screen):
             self.video_slider.value = 0
         # Update bools
         self.ready_for_start = False if current is None else current.event_start_frame is None
+        # Update visual stuff
         self.update_slider_on_event()
+        self.thumbnail_bar.update_thumbnails(different_exp=True)
 
     def on_slider(self):
         """Called when slider value changes. Updates things."""
@@ -320,17 +344,7 @@ class IonCurrentView(Image):
                 # (use downsampled data)
                 sig_min, sig_max = signal.min(), signal.max()
                 normalized_signal = (signal - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
-
-                """OLD CODE MIGHT DISCARD IF REPLACEMENT GOOD"""
-                # # Split the data evenly into the windows
-                # windows = np.array_split(normalized_signal, width - gap_x * 2)
-                # # For each pixel on the x-axis corresponding to a window of signal
-                # for x in range(width - gap_x * 2):
-                #     # Get the range of values here
-                #     min_sig, max_sig = int(windows[x].min()), int(windows[x].max())
-                #     # Draw a verticle line on that x value
-                #     cv2.line(image, (x + gap_x, min_sig), (x + gap_x, max_sig), ION_SIG_COLOUR, 1)
-
+                # Get values to draw (min/max values for every x value)
                 min_array, max_array = split_min_max(normalized_signal, width - gap_x * 2)
                 # For each pixel on the x-axis corresponding to a window of signal
                 for x in range(width - gap_x * 2):
@@ -344,16 +358,84 @@ class IonCurrentView(Image):
         # Set as texture
         self.texture = kivify_image(image)
 
-def split_min_max(signal, width):
-    # Define arrays to return
-    min_array, max_array = np.zeros(width), np.zeros(width)
-    # Get the size of each division (might be decimal)
-    ideal_window_size = len(signal) / width
-    # For each pixel across width
-    j = 0
-    for i in range(width):
-        # Grab the 
-        current_window = signal[int(j) : int(j + ideal_window_size)]
-        min_array[i], max_array[i] = current_window.min(), current_window.max()
-        j += ideal_window_size
-    return min_array, max_array
+
+class ThumbnailBar(BoxLayout):
+    # Integer for the number if thumbnails currently on the bar
+    num_thumbnails = NumericProperty(1)
+    cursor_x = NumericProperty(0)
+
+    def __init__(self, **kwargs):
+        super(ThumbnailBar, self).__init__(**kwargs)
+        # Save app as an attribute
+        self.app = App.get_running_app()
+
+    def on_size(self, instance, current_size):
+        """Called when size of widget changes."""
+        # Update the thumbnail bar!
+        self.update_thumbnails()
+
+    def update_thumbnails(self, different_exp=False):
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Get values used to generate bar
+            num_frames = current.num_frames
+            frame_width, frame_height = current.first_frame.shape[:2]
+            bar_width, bar_height = self.size
+            # Look at size of bar and each frame to determine number of frames to fit
+            # frame_aspect_ratio = frame_width / frame_height
+            # bar_aspect_ratio = bar_width / bar_height
+            # num_thumbnails = int(bar_aspect_ratio / frame_aspect_ratio)
+            num_thumbnails = int(2 * bar_width / (frame_width * bar_height / frame_height))
+            # If not enough frames
+            if num_thumbnails > num_frames:
+                # Use all frames
+                num_thumbnails = num_frames
+            # If this is different to before (or different_exp == True)
+            if self.num_thumbnails != num_thumbnails or different_exp:
+                # Clear all thumbnails objects
+                self.clear_widgets()
+                # Makes all thumbnail objects
+                for i in range(num_thumbnails):
+                    # Get the proportion through the video
+                    prop = i / (num_thumbnails - 1)
+                    # Get frame to use
+                    image, frame_num = current.get_frame(prop)
+                    # Downsize frame
+                    min_width, min_height = int(bar_width / frame_width), int(bar_height)
+                    image = downsample_image(image, min_width, min_height)
+                    # Make and add thumbnail widget
+                    thumbnail = Thumbnail(self, frame_num, texture=kivify_image(image))
+                    self.add_widget(thumbnail)
+                # Update num_thumbnails
+                self.num_thumbnails = num_thumbnails
+        else:
+            # Clear all thumbnails objects
+            self.clear_widgets()
+        
+    def update_cursor(self):
+        self.cursor_x = int((self.width - 1) * self.video_slider.value_normalized)
+        
+
+class Thumbnail(Image):
+    def __init__(self, thumbnail_bar, frame_num, **kwargs):
+        self.thumbnail_bar = thumbnail_bar
+        super(Thumbnail, self).__init__(**kwargs)
+        # Save app as an attribute
+        self.app = App.get_running_app()
+        self.frame_num = frame_num
+        self.ie3_window = self.app.root.get_screen("IE3")
+
+    def on_touch_down(self, touch, after=False):
+        # If user clicked on the ion current view
+        if self.collide_point(*touch.pos):
+            # If there is a current experiment and it is a left click
+            current = self.app.current_experiment
+            if current is not None and touch.button == 'left':
+                print(self.frame_num)
+                # Set current frame as this frame
+                self.ie3_window.video_slider.value = (self.frame_num - 1) / (current.num_frames - 1)
+                # update slider_on_event
+                self.ie3_window.update_slider_on_event()
+        return super(Thumbnail, self).on_touch_down(touch)
+

@@ -4,6 +4,7 @@
 
 #:set LIGHT_GREY (128/255, 130/255, 158/255, 1)
 #:set DARK_GREY (32/255, 33/255, 35/255, 1)
+#:set TANGY (241/255, 148/255, 82/255, 1)
 #:set GREY_BLUE (60/255, 77/255, 109/255, 1)
 #:set BLUE_GREY_BLUE (75/255, 100/255, 153/255, 1)
 #:set BLUE (96/255, 145/255, 246/255, 1)
@@ -84,7 +85,7 @@ WindowManager:
                     # Title
                     Label:
                         id: title_label
-                        text: 'Particle Deformation Analysis'
+                        text: 'Indeukbaar?'
                         font_name: 'resources\\Inter.ttf'
                         font_size: 56
                         padding: [20, 0]
@@ -478,6 +479,7 @@ WindowManager:
     video_slider: video_slider
     frame_label: frame_label
     ion_view: ion_view
+    thumbnail_bar: thumbnail_bar
     GridLayout:
         canvas:
             Color:
@@ -608,7 +610,7 @@ WindowManager:
                         TangyButton:
                             disabled: not root.ready_for_start
                             disabled_color: DARK_GREY
-                            text: 'Enter Start'
+                            text: 'Enter Start (S)'
                             size_hint:(None,None)
                             font_size: 16
                             font_name: 'resources\\Inter.ttf'
@@ -620,7 +622,7 @@ WindowManager:
                         TangyButton:
                             disabled: root.ready_for_start
                             disabled_color: DARK_GREY
-                            text: 'Enter Stop'
+                            text: 'Enter Stop (S)'
                             size_hint:(None,None)
                             font_size: 16
                             font_name: 'resources\\Inter.ttf'
@@ -632,7 +634,7 @@ WindowManager:
                         TangyButton:
                             disabled: not root.slider_on_event
                             disabled_color: DARK_GREY
-                            text: 'Remove'
+                            text: 'Remove (R)'
                             size_hint:(None,None)
                             font_size: 16
                             font_name: 'resources\\Inter.ttf'
@@ -658,18 +660,24 @@ WindowManager:
                     # Video View & File Location Label
                     GridLayout:
                         size_hint_x: 0.7
-                        rows: 2
+                        rows: 4
                         Image:
                             id: video_widget
-                            size_hint: (1, 0.9)
+                            size_hint: (1, 0.82)
                             fit_mode: 'contain'
                             color: CLEAR if self.texture is None else WHITE
+                        FloatLayout:
+                            size_hint:(1,0.01)
+                        ThumbnailBar:
+                            id: thumbnail_bar
+                            video_slider: video_slider
+                            size_hint: (1, 0.1)
                         Label:
                             id: location_label
                             color: WHITE
-                            size_hint: (1, 0.1)
+                            size_hint: (1, 0.07)
                             text: 'No file(s) selected'
-                            padding: [20, 0, 0, 10]
+                            padding: [20, 0, 0, 5]
                             halign: 'left'
                             font_name: 'resources\\Inter.ttf'
                             text_size: self.size
@@ -944,7 +952,7 @@ WindowManager:
     color: DARK_GREY
     canvas.before:
         Color:
-            rgba: (self.state == 'normal' and self.disabled == False) and OFFWHITE or GREY
+            rgba: (self.state == 'normal' and self.disabled == False) and TANGY or GREY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -958,7 +966,7 @@ WindowManager:
     background_color: CLEAR
     background_down: ''
     border: CLEAR
-    color: OFFWHITE
+    color: TANGY
     canvas.before:
         Color:
             rgba: (self.state == 'normal') and CLEAR or GREY
@@ -1001,7 +1009,7 @@ WindowManager:
     font_name: 'resources\\Inter.ttf'
     canvas.before:
         Color:
-            rgba: self.is_selected and OFFWHITE or GREY
+            rgba: self.is_selected and TANGY or GREY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -1092,7 +1100,7 @@ WindowManager:
     font_name: 'resources\\Inter.ttf'
     canvas.before:
         Color:
-            rgba: self.is_selected and OFFWHITE or GREY
+            rgba: self.is_selected and TANGY or LIGHT_GREY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -1158,9 +1166,40 @@ WindowManager:
 <IonCurrentView>:
     size_hint: 1, 1
     color: WHITE if self.texture is None else WHITE
-    on_touch_down: root.set_frame(args[1].pos)
-    on_touch_move: root.set_frame(args[1].pos)
+    on_touch_down: root.set_frame(args[1].pos) if args[1].button == 'left' else None
+    on_touch_move: root.set_frame(args[1].pos) if args[1].button == 'left' else None
 
+
+
+
+# =========================================================================================
+
+
+
+
+
+<ThumbnailBar>:
+    orientation: 'horizontal'
+    spacing: 1
+    canvas.after:
+        Color:
+            rgba: 1,0,0,1
+        Line:
+            points: [self.x + root.cursor_x, self.y, self.x + root.cursor_x, self.y + self.height]
+            width: 1
+            
+
+
+
+# =========================================================================================
+
+
+
+
+<Thumbnail>:
+    size_hint: (1 / root.thumbnail_bar.num_thumbnails, 1)
+    fit_mode: 'cover'
+    
 
 
 # =========================================================================================

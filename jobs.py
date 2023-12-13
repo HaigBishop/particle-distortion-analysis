@@ -12,7 +12,6 @@ from scipy.interpolate import interp1d
 from file_management import *
 
 
-
 # Desired size to downsample signal data
 # raw data is not discarded, this is only used for display
 # e.g. 250,000 yeilds new data in the range of 250,000-500,000
@@ -58,7 +57,7 @@ class Experiment():
         self.num_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         # Grab the dates of creation of the files
         self.vid_date = file_date(self.vid_loc)
-
+        
         # Ion current file
         self.ion_loc = ''
         self.ion_date = None
@@ -92,7 +91,7 @@ class Experiment():
             # Make 2x smaller
             self.downsampled_ioncurr_sig = decimate(self.downsampled_ioncurr_sig, 2)
             self.decimation_factor *= 2
-
+        
     def remove_ion_file(self):
         """Resets the ion current related data."""
         # Ion current file
@@ -109,7 +108,7 @@ class Experiment():
         # Calculate the frame number based on the proportion
         target_frame = int((self.num_frames) * (prop - 10e-8)) + 1 # 1 -> num_frames
         self.current_frame = target_frame
-        return get_frame(self.cap, target_frame - 1)
+        return get_frame(self.cap, target_frame - 1), target_frame
 
 
 class ExperimentBox(Button):
