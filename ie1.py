@@ -83,7 +83,6 @@ class IE1Window(Screen):
         # Loop all experiments
         for exp in self.app.experiments:
             cap = exp.cap
-            print(cap)
             # Check number of frames
             num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             if num_frames < 3:

@@ -115,7 +115,6 @@ class IE3Window(Screen):
         """called by back btn
         - makes a BackPopup object
         - if there are no experiments, it immediately closes it"""
-        print(self.exp_scroll.grid_layout.children)
         # If there are any experiment boxes
         if len(self.exp_scroll.grid_layout.children) > 0:
             # Make pop up - asks if you are sure you want to exit

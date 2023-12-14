@@ -164,7 +164,6 @@ class PDAApp(App):
         """Called when the current experiment changes.
         Calls on_current_experiment if the current screen has this method."""
         current_screen = self.root.current
-        print(current_screen)
         # If on a screen with an experiments list
         if current_screen in ["IE1", "IE3"]:
             # Call on_current_experiment for that exp list scrollview
