@@ -2,16 +2,20 @@
 # App: Particle Deformation Analysis
 # Author: Haig Bishop
 
-#:set LIGHT_GREY (128/255, 130/255, 158/255, 1)
 #:set DARK_GREY (32/255, 33/255, 35/255, 1)
-#:set TANGY (241/255, 148/255, 82/255, 1)
-#:set GREY_BLUE (60/255, 77/255, 109/255, 1)
-#:set BLUE_GREY_BLUE (75/255, 100/255, 153/255, 1)
-#:set BLUE (96/255, 145/255, 246/255, 1)
-#:set OFFWHITE (252/255, 252/255, 239/255, 1)
+#:set DARKISH_GREY (42/255, 42/255, 45/255, 1)
 #:set GREY (62/255, 62/255, 59/255, 1)
-#:set CLEAR (0, 0, 0, 0)
+#:set LIGHT_GREY (98/255, 99/255, 101/255, 1)
 #:set WHITE (1,1,1,1)
+
+#:set TANGY (241/255, 148/255, 82/255, 1)
+#:set DIM_TANGY (122/255, 100/255, 84/255, 1)
+
+#:set CLEAR_GREY (0, 0, 0, 0.4)
+#:set CLEAR_WHITE (1, 1, 1, 0.1)
+#:set CLEAR (0, 0, 0, 0)
+
+#:set RED (1, 0, 0, 1)
 
 
 # =========================================================================================
@@ -54,10 +58,10 @@ WindowManager:
                 size: top_grid.height, top_grid.height
                 # Info button
                 Button:
-                    background_color: 0, 0, 0, 0
+                    background_color: CLEAR
                     background_normal: ''
                     background_down: ''
-                    color: 1, 1, 1, 1
+                    color: WHITE
                     font_size: 30
                     text: '[b]i[/b]'
                     markup: True
@@ -68,7 +72,7 @@ WindowManager:
                     on_press: root.toggle_info()
                     canvas.before:
                         Color:
-                            rgba: main_grid.disabled and (98/255, 99/255, 101/255, 1) or (1, 1, 1, 1)
+                            rgba: main_grid.disabled and LIGHT_GREY or WHITE
                         Line:
                             width: 1.5
                             circle:
@@ -184,9 +188,9 @@ WindowManager:
         id: info_layout
         disabled: True
         opacity: 0 if self.disabled else 1
-        pos: (99999, 99999)
+        pos: (69420, 0)
         Button:
-            background_color: 0, 0, 0, 0
+            background_color: CLEAR
             pos_hint: {'center_x':0.5, 'center_y':0.5}
             size_hint: 1, 1
             on_press: root.toggle_info()
@@ -253,7 +257,7 @@ WindowManager:
     GridLayout:
         canvas:
             Color:
-                rgba: 1,1,1,0.1
+                rgba: CLEAR_WHITE
             Line:
                 points: [0, self.height - 60, self.width, self.height - 60]
                 width: 0.5
@@ -261,7 +265,7 @@ WindowManager:
                 points: [self.width*0.75, self.height, self.width*0.75, 0]
                 width: 0.5
             Color:
-                rgba: (42/255, 42/255, 45/255, 1)
+                rgba: DARKISH_GREY
             Rectangle:
                 pos: (0,0)
                 size: (self.width*0.75, (self.height-80) * 0.79)
@@ -483,7 +487,7 @@ WindowManager:
     GridLayout:
         canvas:
             Color:
-                rgba: 1,1,1,0.1
+                rgba: CLEAR_WHITE
             Line:
                 points: [0, self.height - 60, self.width, self.height - 60]
                 width: 0.5
@@ -491,7 +495,7 @@ WindowManager:
                 points: [self.width*0.75, self.height, self.width*0.75, 0]
                 width: 0.5
             Color:
-                rgba: (42/255, 42/255, 45/255, 1)
+                rgba: DARKISH_GREY
             Rectangle:
                 pos: (0,0)
                 size: (self.width*0.75, self.height-60)
@@ -525,6 +529,7 @@ WindowManager:
                 FloatLayout:
                     size_hint_x: 1
             GridLayout:
+                disabled: root.app.current_experiment is None
                 rows: 4
                 size_hint_y: 1
                 # Buttons row
@@ -594,6 +599,7 @@ WindowManager:
                     max: 1
                     size_hint: 1, 0.1
                     cursor_image: 'resources\\white_circle.png'
+                    cursor_disabled_image: 'resources\\white_circle.png'
                     cursor_size: 36, 36
                     on_value: root.on_slider()
                 # Side buttons and video view
@@ -742,7 +748,7 @@ WindowManager:
     GridLayout:
         canvas:
             Color:
-                rgba: 1,1,1,0.1
+                rgba: CLEAR_WHITE
             Line:
                 points: [0, self.height - 60, self.width, self.height - 60]
                 width: 0.5
@@ -750,7 +756,7 @@ WindowManager:
                 points: [self.width*0.75, self.height, self.width*0.75, 0]
                 width: 0.5
             Color:
-                rgba: (42/255, 42/255, 45/255, 1)
+                rgba: DARKISH_GREY
             Rectangle:
                 pos: (0,0)
                 size: (self.width*0.75, (self.height-80) * 0.79)
@@ -952,7 +958,7 @@ WindowManager:
     color: DARK_GREY
     canvas.before:
         Color:
-            rgba: (self.state == 'normal' and self.disabled == False) and TANGY or GREY
+            rgba: (self.state == 'normal' and self.disabled == False) and TANGY or DIM_TANGY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -969,7 +975,7 @@ WindowManager:
     color: TANGY
     canvas.before:
         Color:
-            rgba: (self.state == 'normal') and CLEAR or GREY
+            rgba: (self.state == 'normal') and CLEAR or DIM_TANGY
         RoundedRectangle:
             pos: self.x+2, self.y+2
             size: self.width-4, self.height-4
@@ -1009,7 +1015,7 @@ WindowManager:
     font_name: 'resources\\Inter.ttf'
     canvas.before:
         Color:
-            rgba: self.is_selected and TANGY or GREY
+            rgba: self.is_selected and TANGY or DIM_TANGY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -1100,7 +1106,7 @@ WindowManager:
     font_name: 'resources\\Inter.ttf'
     canvas.before:
         Color:
-            rgba: self.is_selected and TANGY or LIGHT_GREY
+            rgba: self.is_selected and TANGY or DIM_TANGY
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -1183,9 +1189,9 @@ WindowManager:
     spacing: 1
     canvas.after:
         Color:
-            rgba: 1,0,0,1
+            rgba: RED
         Line:
-            points: [self.x + root.cursor_x, self.y, self.x + root.cursor_x, self.y + self.height]
+            points: [self.x + root.cursor_x, self.y, self.x + root.cursor_x, self.y + self.height + 1]
             width: 1
             
 
@@ -1199,6 +1205,7 @@ WindowManager:
 <Thumbnail>:
     size_hint: (1 / root.thumbnail_bar.num_thumbnails, 1)
     fit_mode: 'cover'
+    on_touch_down: root.set_as_frame(args[1].pos) if args[1].button == 'left' else None
     
 
 
@@ -1208,7 +1215,7 @@ WindowManager:
     pos_hint: {'center_y': 0.5}
     canvas.before:
         Color:
-            rgba: 0, 0, 0, 0.4  # Grey color with 50% opacity
+            rgba: CLEAR_GREY
         Rectangle:
             pos: self.pos
             size: self.size

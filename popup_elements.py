@@ -26,16 +26,17 @@ class BackPopup(Popup):
         if answer == "yes":
             # Get app object
             app = App.get_running_app()
-            # Reset current experiment
-            app.current_experiment = None
-            # Empty the job list (boxes only if not going to main)
-            boxes_only = self.screen_id != 'main'
-            app.clear_experiments(boxes_only=boxes_only)
-            # Update the current screen
-            app.root.get_screen(app.root.current).update_fields()
+            # Empty the job list for IE3 (boxes only if not going to main)
+            going_to_main = self.screen_id == 'main'
+            app.clear_experiments(boxes_only=not going_to_main)
             # Change screen
             app.root.current = self.screen_id
             app.root.transition.direction = "right"
+            # Deselect experiments
+            app.deselect_all_experiments()
+            # Update the current screen if not going to main
+            if not going_to_main:
+                app.root.get_screen(app.root.current).update_fields()
             # Close popup
             self.dismiss()
         # If they said "no cancel"

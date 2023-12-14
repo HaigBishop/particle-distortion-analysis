@@ -1,15 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.11)
+Program: Particle Deformation Analysis (Version 0.1.12)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 13/12/2023
+Date: 14/12/2023
 Version Description:
-- Show thumbnail bar
-- added colour to buttons etc.
-- only left click for cursor on ion current data
-- allow click on thumbnails
-- show red line on thumbnails
+- fixed bugs + small improvements
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -168,6 +164,7 @@ class PDAApp(App):
         """Called when the current experiment changes.
         Calls on_current_experiment if the current screen has this method."""
         current_screen = self.root.current
+        print(current_screen)
         # If on a screen with an experiments list
         if current_screen in ["IE1", "IE3"]:
             # Call on_current_experiment for that exp list scrollview
@@ -222,8 +219,6 @@ class PDAApp(App):
             exp_scroll = self.root.get_screen(current_screen).exp_scroll
             # Clear both lists
             exp_scroll.clear_list(boxes_only=boxes_only)
-            # Deselect
-            self.current_experiment = None
 
 
 # If this is the main python file

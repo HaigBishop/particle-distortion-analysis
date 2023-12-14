@@ -13,13 +13,12 @@ from kivy.clock import Clock
 # Import modules for dealing with files
 from plyer import filechooser
 import cv2
-from cv2 import flip
 import os
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
 from jobs import Experiment, ExperimentBox
-from file_management import is_ion_file, is_video_file, kivify_image
+from file_management import is_ion_file, is_video_file, kivify_image, get_frame
 
 class IE1Window(Screen):
     """position -> force screen"""
@@ -84,6 +83,7 @@ class IE1Window(Screen):
         # Loop all experiments
         for exp in self.app.experiments:
             cap = exp.cap
+            print(cap)
             # Check number of frames
             num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             if num_frames < 3:
@@ -95,7 +95,7 @@ class IE1Window(Screen):
                 errors.append("invalid video resolution (" + str(exp.name) + ")\n")
             # Check number of channels
             # (by getting the shape of the first frame)
-            _, frame = cap.read()
+            frame = get_frame(cap, 1)
             _, _, num_channels = frame.shape
             if int(num_channels) not in [1, 3]:
                 errors.append("invalid number of video channels (" + str(exp.name) + ")\n")
@@ -319,10 +319,8 @@ class IE1Window(Screen):
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            # Get the first frame and flip for Kivy
-            image = flip(current.first_frame, 0)
             # Convert the image to a format useable for Kivy
-            self.image_widget.texture = kivify_image(image)
+            self.image_widget.texture = kivify_image(current.first_frame)
 
     def on_back_btn(self):
         """called by back btn

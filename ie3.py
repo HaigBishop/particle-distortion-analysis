@@ -20,13 +20,13 @@ from popup_elements import BackPopup
 from jobs import ExperimentBox
 from file_management import kivify_image, split_min_max, downsample_image
 
-# Set constants
+# Set colour constants
 ION_BACKGROUND_SHADE = 245
-ION_SIG_COLOUR = (132, 255, 92)
+ION_SIG_COLOUR = (68, 214, 24)
 ION_CURRENT_FRAME_COLOUR = (212, 212, 212)
 ION_EVENT_COLOUR = (238, 238, 238)
 ION_EVENT_EDGE_COLOUR = (82, 82, 82)
-ION_EVENT_START_COLOUR = (255, 142, 88)
+ION_EVENT_START_COLOUR = (242, 144, 39)
 ION_CURSOR_COLOUR = (0, 0, 255)
 
 class IE3Window(Screen):
@@ -87,7 +87,7 @@ class IE3Window(Screen):
                 self.ion_location_label.text = 'No file selected'
                 self.ion_view.update_view()
             # Update the thumbnail cursor
-            self.thumbnail_bar.cursor_x = int((self.thumbnail_bar.width - 1) * self.video_slider.value_normalized)
+            self.thumbnail_bar.update_cursor()
         else:
             # Update slider
             self.video_slider.value = 0
@@ -99,7 +99,7 @@ class IE3Window(Screen):
             self.frame_label.text = ''
             self.ion_view.texture = None
             # Update the thumbnail cursor
-            self.thumbnail_bar.cursor_x = 0
+            self.thumbnail_bar.cursor_x = -999
 
     def update_video(self):
         """Update the video view by displaying the current frame."""
@@ -115,8 +115,9 @@ class IE3Window(Screen):
         """called by back btn
         - makes a BackPopup object
         - if there are no experiments, it immediately closes it"""
-        # If there are any experiments
-        if len(self.app.experiments) > 0:
+        print(self.exp_scroll.grid_layout.children)
+        # If there are any experiment boxes
+        if len(self.exp_scroll.grid_layout.children) > 0:
             # Make pop up - asks if you are sure you want to exit
             popup = BackPopup("IE1")
             # Open it
@@ -360,11 +361,15 @@ class IonCurrentView(Image):
 
 
 class ThumbnailBar(BoxLayout):
+    """The layout which holds the row of thumbnails below the video."""
+
     # Integer for the number if thumbnails currently on the bar
     num_thumbnails = NumericProperty(1)
-    cursor_x = NumericProperty(0)
+    # Float for the current x position of the cursor
+    cursor_x = NumericProperty(-9999)
 
     def __init__(self, **kwargs):
+        # Call the BoxLayout __init__ method
         super(ThumbnailBar, self).__init__(**kwargs)
         # Save app as an attribute
         self.app = App.get_running_app()
@@ -375,24 +380,22 @@ class ThumbnailBar(BoxLayout):
         self.update_thumbnails()
 
     def update_thumbnails(self, different_exp=False):
+        """Checks current experiment's frames and dimensions of thumbnail bar to update the thumbnail bar."""
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            # Get values used to generate bar
-            num_frames = current.num_frames
+            # Get dimensions of bar and frames
             frame_width, frame_height = current.first_frame.shape[:2]
             bar_width, bar_height = self.size
-            # Look at size of bar and each frame to determine number of frames to fit
-            # frame_aspect_ratio = frame_width / frame_height
-            # bar_aspect_ratio = bar_width / bar_height
-            # num_thumbnails = int(bar_aspect_ratio / frame_aspect_ratio)
+            # Use this ^ to determine number of frames to fit
             num_thumbnails = int(2 * bar_width / (frame_width * bar_height / frame_height))
             # If not enough frames
-            if num_thumbnails > num_frames:
-                # Use all frames
-                num_thumbnails = num_frames
-            # If this is different to before (or different_exp == True)
+            if num_thumbnails > current.num_frames:
+                # Use all frames (do our best lol)
+                num_thumbnails = current.num_frames
+            # If either [the number of thumbnails] or [the current experiment] is changing
             if self.num_thumbnails != num_thumbnails or different_exp:
+                # Update the thumbnail bar
                 # Clear all thumbnails objects
                 self.clear_widgets()
                 # Makes all thumbnail objects
@@ -414,28 +417,38 @@ class ThumbnailBar(BoxLayout):
             self.clear_widgets()
         
     def update_cursor(self):
-        self.cursor_x = int((self.width - 1) * self.video_slider.value_normalized)
+        """Updates the cursor x position (this will update the red line)."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Set cursor x according to slider position
+            self.cursor_x = self.width * self.video_slider.value_normalized
+        else:
+            self.cursor_x = -99999
         
 
 class Thumbnail(Image):
+    """The Image class for the thumbnails in the thumbnail bar."""
+
     def __init__(self, thumbnail_bar, frame_num, **kwargs):
+        # Save bar as an attribute
         self.thumbnail_bar = thumbnail_bar
+        # Call the Image __init__ method
         super(Thumbnail, self).__init__(**kwargs)
         # Save app as an attribute
         self.app = App.get_running_app()
-        self.frame_num = frame_num
+        # Save the window as an attribute
         self.ie3_window = self.app.root.get_screen("IE3")
+        # Set the frame number as current frame
+        self.frame_num = frame_num
 
-    def on_touch_down(self, touch, after=False):
-        # If user clicked on the ion current view
-        if self.collide_point(*touch.pos):
-            # If there is a current experiment and it is a left click
-            current = self.app.current_experiment
-            if current is not None and touch.button == 'left':
-                print(self.frame_num)
-                # Set current frame as this frame
-                self.ie3_window.video_slider.value = (self.frame_num - 1) / (current.num_frames - 1)
-                # update slider_on_event
-                self.ie3_window.update_slider_on_event()
-        return super(Thumbnail, self).on_touch_down(touch)
-
+    def set_as_frame(self, pos):
+        """Sets this frame as current if touch is a left click on this thumbnail."""
+        # If there is a current experiment and the click is on this thumbnail
+        current = self.app.current_experiment
+        if current is not None and self.collide_point(*pos):
+            # Set current frame as this frame
+            self.ie3_window.video_slider.value = (self.frame_num - 1) / (current.num_frames - 1)
+            # update slider_on_event
+            self.ie3_window.update_slider_on_event()
+            
