@@ -8,7 +8,7 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 from kivy.app import App
 from kivy.uix.screenmanager import Screen
 
-# Import modules for dealing with files
+# Import modules
 from plyer import filechooser
 from cv2 import flip
 
@@ -16,6 +16,7 @@ from cv2 import flip
 from popup_elements import BackPopup
 from jobs import Event, EventBox
 from file_management import is_event_file, kivify_image
+
 
 class TD1Window(Screen):
     """Tracking Deformation screen 1"""
@@ -144,13 +145,13 @@ class TD1Window(Screen):
         # If there are any events
         if len(self.app.events) > 0:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup("main")
+            popup = BackPopup(from_screen="TD1", to_screen="main")
             # Open it
             popup.open()
         # If there are not events
         else:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup("main")
+            popup = BackPopup(from_screen="TD1", to_screen="main")
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
 

@@ -11,7 +11,7 @@ from kivy.properties import BooleanProperty, NumericProperty
 from kivy.uix.image import Image
 from kivy.uix.boxlayout import BoxLayout
 
-# Import modules for dealing with files
+# Import modules
 import cv2
 import numpy as np
 
@@ -20,7 +20,7 @@ from popup_elements import BackPopup
 from jobs import ExperimentBox
 from file_management import kivify_image, split_min_max, downsample_image
 
-# Set colour constants
+# Set constants
 ION_BACKGROUND_SHADE = 245
 ION_SIG_COLOUR = (68, 214, 24)
 ION_CURRENT_FRAME_COLOUR = (212, 212, 212)
@@ -39,6 +39,10 @@ class IE3Window(Screen):
     ready_for_start = BooleanProperty(True)
     # Will display the downsampled signal if True
     use_downsampled = BooleanProperty(True) 
+
+    # Floats which define the zoom for the current experiment
+    zoom_start = NumericProperty(0.0)
+    zoom_end = NumericProperty(1.0)
 
 
     def __init__(self, **kwargs):
@@ -111,6 +115,31 @@ class IE3Window(Screen):
             # Convert the image to a format useable for Kivy
             self.video_widget.texture = kivify_image(image)
 
+    def zoom_in(self):
+        """Try zoom in."""
+        # Preform the zoom
+        self.zoom_start += 0.02
+        self.zoom_end -= 0.02
+        # Ensure the new zoom is valid
+        new_range = self.zoom_end - self.zoom_start
+        min_range = self.app.current_experiment.zoom_max
+        if new_range < min_range:
+            # Set to min range centred on current values
+            centre = (self.zoom_start + self.zoom_end) / 2
+            self.zoom_start = centre - min_range / 2
+            self.zoom_end = centre + min_range / 2
+
+    def zoom_out(self):
+        """Try zoom out."""
+        # Preform the zoom
+        self.zoom_start -= 0.02
+        self.zoom_end += 0.02
+        # Ensure the new zoom is valid
+        if self.zoom_start < 0:
+            self.zoom_start = 0
+        if self.zoom_end > 1:
+            self.zoom_end = 1
+
     def on_back_btn(self):
         """called by back btn
         - makes a BackPopup object
@@ -118,13 +147,13 @@ class IE3Window(Screen):
         # If there are any experiment boxes
         if len(self.exp_scroll.grid_layout.children) > 0:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup("IE1")
+            popup = BackPopup(from_screen="IE3", to_screen="IE1")
             # Open it
             popup.open()
         # If there are not experiments
         else:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup("IE1")
+            popup = BackPopup(from_screen="IE3", to_screen="IE1")
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
     
@@ -215,6 +244,7 @@ class IE3Window(Screen):
     def on_key_up(self, key):
         """called when a key is released up
         - there are many results depending on the key"""
+        self.app.current_experiment.zoom_end -= 0.05
         # If there is a current experiment
         if self.app.current_experiment is not None:
             # If the 's' key is released
@@ -252,7 +282,7 @@ class IE3Window(Screen):
                         break
         # Update with final value
         self.slider_on_event = on_event
-            
+
 
     def on_current_experiment(self, instance, current_experiment):
         """Called when current experiment changes. Updates slider"""
@@ -266,6 +296,9 @@ class IE3Window(Screen):
             self.video_slider.value = 0
         # Update bools
         self.ready_for_start = False if current is None else current.event_start_frame is None
+        # Reset zoom
+        self.zoom_start = 0.0
+        self.zoom_end = 1.0
         # Update visual stuff
         self.update_slider_on_event()
         self.thumbnail_bar.update_thumbnails(different_exp=True)
@@ -296,6 +329,32 @@ class IonCurrentView(Image):
             self.video_slider.value = (pos[0] - self.x) / self.width
         # update slider_on_event
         self.ie3_window.update_slider_on_event()
+
+    def _on_touch_down(self, touch):
+        """Called when touch down."""
+        # If is on the ion current view
+        if self.collide_point(*touch.pos):
+            # If the touch is a scrolldowm
+            if touch.button == "scrolldowm":
+                # Try zoom in
+                self.ie3_window.zoom_in()
+            # If the touch is a scrollup
+            elif touch.button == "scrollup":
+                # Try zoom out
+                self.ie3_window.zoom_out()
+            # If the touch is a left click
+            elif touch.button == "left":
+                # Set frame
+                self.set_frame(touch.pos)
+
+    def _on_touch_move(self, touch):
+        """Called when touch move."""
+        # If is on the ion current view
+        if self.collide_point(*touch.pos):
+            # If the touch is a left click
+            if touch.button == "left":
+                # Set frame
+                self.set_frame(touch.pos)
 
     def on_size(self, instance, current_size):
         """Called when size of widget changes."""
@@ -357,7 +416,6 @@ class IonCurrentView(Image):
         cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)
         # Set as texture
         self.texture = kivify_image(image)
-
 
 class ThumbnailBar(BoxLayout):
     """The layout which holds the row of thumbnails below the video."""

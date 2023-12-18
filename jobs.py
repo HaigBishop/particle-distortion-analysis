@@ -1,44 +1,29 @@
+"""
+Module:  All classes related to Experiments and Events
+Program: Particle Deformation Analysis
+Author: Haig Bishop (hbi34@uclive.ac.nz)
+"""
+
+# Kivy imports
+from kivy.uix.button import Button
+from kivy.uix.scrollview import ScrollView
+from kivy.properties import BooleanProperty, NumericProperty
+from kivy.app import App
+
+# Import modules
 import os
 from subprocess import Popen as p_open
 import cv2
 from scipy.signal import decimate
 
-from kivy.uix.button import Button
-from kivy.uix.scrollview import ScrollView
-from kivy.properties import BooleanProperty
-from kivy.app import App
-from scipy.interpolate import interp1d
-
+# Import local modules
 from file_management import *
-
 
 # Desired size to downsample signal data
 # raw data is not discarded, this is only used for display
 # e.g. 250,000 yeilds new data in the range of 250,000-500,000
-DESIRED_SIGNAL_SIZE = 250000 
+DESIRED_SIGNAL_SIZE = 250000
 
-def find_optimal_decimation_factor(signal, max_factor=10):
-    """
-    Downsample the signal and find the largest decimation factor that does not
-    significantly affect the signal. Returns the downsampled signal and the optimal
-    decimation factor.
-    """
-
-    def is_factor(n, factor):
-        return n % factor == 0
-
-    original_length = len(signal)
-    optimal_factor = 1
-    downsampled_signal = signal
-
-    for factor in range(2, max_factor + 1):
-        if is_factor(original_length, factor):
-            decimated_signal = decimate(signal, factor)
-            if np.allclose(signal, decimate(decimated_signal, 1/factor)):
-                downsampled_signal = decimated_signal
-                optimal_factor = factor
-
-    return downsampled_signal, optimal_factor
 
 class Experiment():
     """Object which represents a micro aspiration experiment.
@@ -70,6 +55,11 @@ class Experiment():
         # Event params (used when selecting events)
         self.event_start_frame = None
         self.event_ranges = []
+
+        # Zoom ranges
+        self.zoom_start = 0.1
+        self.zoom_end = 0.9
+        self.zoom_max = 0.1
     
     def add_ion_file(self, file_loc):
         """Reads a TDMS file and holds information in this object.
@@ -190,10 +180,13 @@ class ExperimentList(ScrollView):
         self.window.update_fields()
 
     def on_current_experiment(self, instance, current_experiment):
+        self.update_is_selected()
+
+    def update_is_selected(self):
         # For every box
         for exp_box in self.grid_layout.children:
             # If not selected
-            if exp_box.experiment != current_experiment:
+            if exp_box.experiment != self.app.current_experiment:
                 exp_box.is_selected = False
             # If selected
             else:
@@ -245,3 +238,4 @@ class EventList(ScrollView):
         self.app = App.get_running_app()
         # Call ScrollView init method
         super(EventList, self).__init__(**kwargs)
+        

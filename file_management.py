@@ -4,16 +4,17 @@ Program: Particle Deformation Analysis
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 """
 
+# Kivy imports
+from kivy.graphics.texture import Texture
 
-# Import modules used for dealing with files
+# Import modules
 from datetime import datetime
 import cv2
-from cv2 import flip
 import os
 import numpy as np
-from kivy.graphics.texture import Texture
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
+
 
 def kivify_image(image):
     """uses image to make kivy_image
@@ -21,7 +22,7 @@ def kivify_image(image):
     - kivy_image is a kivy compatible texture"""
     # If there is an image
     if isinstance(image, np.ndarray):
-        image = flip(image, 0)
+        image = cv2.flip(image, 0)
         # Make kivy version
         kivy_image = Texture.create(
             size=(image.shape[1], image.shape[0]), colorfmt="bgr"
@@ -225,7 +226,6 @@ def split_min_max(signal, width):
         # Move to the next split
         j += ideal_window_size
     return min_array, max_array
-
 
 def downsample_image(image, min_width, min_height):
     min_width = 150 if min_width < 150 else min_width

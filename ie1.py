@@ -10,7 +10,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.properties import BooleanProperty
 from kivy.clock import Clock
 
-# Import modules for dealing with files
+# Import modules
 from plyer import filechooser
 import cv2
 import os
@@ -19,6 +19,7 @@ import os
 from popup_elements import BackPopup, ErrorPopup
 from jobs import Experiment, ExperimentBox
 from file_management import is_ion_file, is_video_file, kivify_image, get_frame
+
 
 class IE1Window(Screen):
     """position -> force screen"""
@@ -328,13 +329,13 @@ class IE1Window(Screen):
         # If there are any experiments
         if len(self.app.experiments) > 0:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup("main")
+            popup = BackPopup(from_screen="IE1", to_screen="main")
             # Open it
             popup.open()
         # If there are not experiments
         else:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup("main")
+            popup = BackPopup(from_screen="IE1", to_screen="main")
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
 

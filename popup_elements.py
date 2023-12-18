@@ -7,16 +7,16 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Kivy imports
 from kivy.app import App
 from kivy.uix.popup import Popup
-from kivy.uix.floatlayout import FloatLayout
 
 
 class BackPopup(Popup):
     """A custom Popup object for going back a page"""
 
-    def __init__(self, screen_id, **kwargs):
+    def __init__(self, from_screen, to_screen, **kwargs):
         """init method for BackPopup"""
-        # The screen this popup will direct to
-        self.screen_id = screen_id
+        # The screen this popup will direct to and from
+        self.from_screen = from_screen
+        self.to_screen = to_screen
         # Call Popup init method
         super(BackPopup, self).__init__(**kwargs)
 
@@ -24,25 +24,43 @@ class BackPopup(Popup):
         """called when user presses 'yes' or 'no'"""
         # If they said "yes go back"
         if answer == "yes":
-            # Get app object
+            # Get app and screen objects
             app = App.get_running_app()
-            # Empty the job list for IE3 (boxes only if not going to main)
-            going_to_main = self.screen_id == 'main'
-            app.clear_experiments(boxes_only=not going_to_main)
-            # Change screen
-            app.root.current = self.screen_id
-            app.root.transition.direction = "right"
-            # Deselect experiments
-            app.deselect_all_experiments()
-            # Update the current screen if not going to main
-            if not going_to_main:
-                app.root.get_screen(app.root.current).update_fields()
-            # Close popup
-            self.dismiss()
-        # If they said "no cancel"
-        else:
-            # Close popup
-            self.dismiss()
+            from_screen = app.root.get_screen(self.from_screen)
+            to_screen = app.root.get_screen(self.to_screen)
+            # If IE1 -> main
+            if self.from_screen == 'IE1' and self.to_screen == 'main':
+                # Clear all experiments and their boxes
+                app.clear_experiments(boxes_only=False)
+                # Update the from screen
+                from_screen.update_fields()
+                # Change screen
+                app.root.current = self.to_screen
+                app.root.transition.direction = "right"
+            # If IE3 -> IE1
+            elif self.from_screen == 'IE3' and self.to_screen == 'IE1':
+                # Clear all experiments, but not their boxes
+                app.clear_experiments(boxes_only=True)
+                # Update the from screen
+                from_screen.update_fields()
+                # Change screen
+                app.root.current = self.to_screen
+                app.root.transition.direction = "right"
+                # Update the to screen
+                to_screen.update_fields()
+                # Manually update is_selected for boxes
+                to_screen.exp_scroll.update_is_selected()
+            # If TD1 -> main
+            elif self.from_screen == 'TD1' and self.to_screen == 'main':
+                # Clear all experiments and their boxes
+                app.clear_experiments(boxes_only=False)
+                # Update the from screen
+                from_screen.update_fields()
+                # Change screen
+                app.root.current = self.to_screen
+                app.root.transition.direction = "right"
+        # Close popup
+        self.dismiss()
 
 
 class ErrorPopup(Popup):
