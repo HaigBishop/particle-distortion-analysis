@@ -14,7 +14,82 @@ import os
 import numpy as np
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
+from moviepy.editor import VideoFileClip
 
+def count_frames(video_loc):
+    """Accurately finds the number of frames in the video.
+    - assumes the video can be read"""
+    # Read file using cv2
+    cap = cv2.VideoCapture(video_loc)
+    # Get number of frames from meta data
+    num_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    # Test if this number is reliable
+    cap.set(cv2.CAP_PROP_POS_FRAMES, num_frames - 1)
+    is_good_1, frame = cap.read()
+    cap.set(cv2.CAP_PROP_POS_FRAMES, num_frames)
+    is_good_2, frame = cap.read()
+    metadata_reliable = is_good_1 and not is_good_2
+    # If it is not reliable
+    if not metadata_reliable:
+        # Read file using moviepy
+        clip = VideoFileClip(video_loc)
+        # Get number of fps and duration to estimate number of frames
+        frame_count = int(clip.fps * clip.duration)
+        clip.close()
+        # Using this estimate, find a counting start point
+        start_frame = frame_count
+        jump_amount = 150
+        was_good = None
+        # Jump around frames until you find roughly where the end of the video is
+        while True:
+            # Try read this frame
+            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+            is_good, frame = cap.read()
+            # If first loop
+            if was_good is None:
+                # Act like nothing has changed
+                was_good = is_good
+            # If this frame is good and the previous frame was not good
+            if is_good is True and was_good is False:
+                # Found the end point roughly - end here
+                start_frame -= 1
+                break
+            # If this frame is good and the previous frame was also good
+            elif is_good is True and was_good is True:
+                # Not at end yet - jump forward
+                start_frame += jump_amount
+                was_good = True
+            # If this frame is not good and the previous frame was good
+            elif is_good is False and was_good is True:
+                # Found the end point roughly - end here
+                start_frame -= jump_amount + 1
+                break
+            # If this frame is not good and the previous frame was also not good
+            elif is_good is False and was_good is False:
+                # Not at end yet - jump backwards
+                start_frame -= jump_amount
+                was_good = False
+            # What.. this isn't good.
+            else:
+                # Abort
+                start_frame = 0
+                break
+        # Use this as the start frame
+        num_frames = max(start_frame, 0)
+        # Step forward frame-by-frame until you find the end
+        while True:
+            # Try read this frame
+            cap.set(cv2.CAP_PROP_POS_FRAMES, num_frames)
+            is_good, frame = cap.read()
+            # If readable
+            if is_good:
+                # Not at end yet - next frame
+                num_frames += 1
+            else:
+                # Found the end :)
+                break
+        cap.release()
+    return int(num_frames)
 
 def kivify_image(image):
     """uses image to make kivy_image
@@ -54,13 +129,23 @@ def is_video_file(file_loc):
         # Try open and read file
         try:
             # Read file into TdmsFile object
-            read_vid(file_loc)
+            cap = read_vid(file_loc)
+            cap_is_none = cap is None
+            # Release the video capture object if not None
+            if not cap_is_none:
+                cap.release()
         except Exception as e:
             # Failed to read file
             print("Failed to read video file: ", e)
+            return False
         else:
-            # Is readable video file!
-            return True
+            if cap_is_none:
+                # Failed to read first frame
+                print("Failed to read the first frame.")
+                return False
+            else:
+                # Is readable video file!
+                return True
     else:
         # Incorrect extension
         return False
@@ -103,25 +188,13 @@ def read_vid(video_loc):
     if not cap.isOpened():
         print("Error: Could not open video file.")
         return None
-    return cap
-
-def first_frame(video_loc):
-    """Returns the first frame of the video at video_loc"""
-    # Open the video file
-    cap = cv2.VideoCapture(video_loc)
-    # Check if the video file is opened successfully
-    if not cap.isOpened():
-        print("Error: Could not open video file.")
-        return None
     # Read the first frame
     ret, frame = cap.read()
-    # Release the video capture object
-    cap.release()
     # Check if the frame is read successfully
     if not ret:
         print("Error: Could not read the first frame.")
         return None
-    return frame
+    return cap
 
 def get_frame(cap, target_frame):
     """Returns the specified frame in the video (cap)."""
@@ -242,3 +315,4 @@ def downsample_image(image, min_width, min_height):
     # Resize the image using the calculated dimensions
     resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
     return resized_image
+

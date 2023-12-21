@@ -1,12 +1,12 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.13)
+Program: Particle Deformation Analysis (Version 0.1.14)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 18/12/2023
+Date: 21/12/2023
 Version Description:
-- make backpop up code better
-- started implementing zoom on IE3
+- completed zoom feature on IE3
+- improvements to application performance (e.g. loading, signal viewing)
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -75,6 +75,10 @@ class WindowManager(ScreenManager):
         if self.app.root.current == "":
             # Call x
             pass
+        # Check if the 'shift' key is pressed down
+        if key == "shift":
+            # Shift key down
+            self.app.shift_is_down = True
 
     def on_key_up(self, _1, keycode, _2):
         """called when the user stops pressing a key
@@ -89,6 +93,10 @@ class WindowManager(ScreenManager):
             # Send key up command to that screen
             screen = self.app.root.get_screen(current_screen)
             screen.on_key_up(key)
+        # Check if the 'shift' key is pressed up
+        if key == "shift":
+            # Shift key up
+            self.app.shift_is_down = False
 
 
 class MainWindow(Screen):
@@ -120,7 +128,6 @@ class MainWindow(Screen):
             self.main_grid.disabled = False
             self.help_scroll.scroll_y = 1  # Resets the scroll
 
-
 class PDAApp(App):
     """base of the PDA kivy app"""
 
@@ -130,6 +137,8 @@ class PDAApp(App):
     # This holds the current event/experiment
     current_experiment = ObjectProperty(None, allownone=True)
     current_event = ObjectProperty(None, allownone=True)
+    # True when shift key is down
+    shift_is_down = BooleanProperty(False)
 
     def build(self):
         """initialises the app"""
@@ -171,7 +180,7 @@ class PDAApp(App):
             screen = self.root.get_screen(current_screen)
             screen.exp_scroll.on_current_experiment(instance, current_experiment)
         # If on a IE3
-        if current_screen in ["IE3"]:
+        if current_screen in ["IE1", "IE3"]:
             # Call on_current_experiment for that exp list scrollview
             screen = self.root.get_screen(current_screen)
             screen.on_current_experiment(instance, current_experiment)

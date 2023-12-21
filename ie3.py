@@ -14,6 +14,7 @@ from kivy.uix.boxlayout import BoxLayout
 # Import modules
 import cv2
 import numpy as np
+from math import exp
 
 # Import local modules
 from popup_elements import BackPopup
@@ -29,6 +30,7 @@ ION_EVENT_EDGE_COLOUR = (82, 82, 82)
 ION_EVENT_START_COLOUR = (242, 144, 39)
 ION_CURSOR_COLOUR = (0, 0, 255)
 
+
 class IE3Window(Screen):
     """position -> force screen"""
     # True when using ion current data
@@ -37,8 +39,8 @@ class IE3Window(Screen):
     slider_on_event = BooleanProperty(False) 
     # True when ready for start - False when ready for stop
     ready_for_start = BooleanProperty(True)
-    # Will display the downsampled signal if True
-    use_downsampled = BooleanProperty(True) 
+    # Will always display the original signal if True
+    always_use_OG_sig = BooleanProperty(False) 
 
     # Floats which define the zoom for the current experiment
     zoom_start = NumericProperty(0.0)
@@ -54,10 +56,6 @@ class IE3Window(Screen):
 
     def on_proceed(self):
         """called by pressing the 'Proceed' button."""
-        # self.use_downsampled = not self.use_downsampled
-        # print(self.use_downsampled)
-        # # Update everything visually
-        # self.update_fields()
         pass
 
     def load_experiments(self):
@@ -78,11 +76,14 @@ class IE3Window(Screen):
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            # Update with current experiment's values
-            self.location_label.text = str(current.vid_loc)
+            # Update these
+            self.update_current_frame()
+            self.update_slider_on_event()
             self.update_video()
             # Update frame label
             self.frame_label.text = 'Frame: ' + str(current.current_frame) + '/' + str(current.num_frames)
+            # Update with current experiment's values
+            self.location_label.text = str(current.vid_loc)
             # Update ion current file select section
             if self.use_ion and current.ion_loc != '':
                 self.ion_location_label.text = str(current.ion_loc)
@@ -103,42 +104,201 @@ class IE3Window(Screen):
             self.frame_label.text = ''
             self.ion_view.texture = None
             # Update the thumbnail cursor
-            self.thumbnail_bar.cursor_x = -999
+            self.thumbnail_bar.cursor_x = -9999
+    
+    def update_current_frame(self):
+        """Updates the current experiments current_frame attribute."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Find the current range of frames in view
+            start_frame = int((current.num_frames - 1) * self.zoom_start)
+            end_frame = int((current.num_frames - 1) * self.zoom_end) + 1
+            frame_range = end_frame - start_frame
+            # Use this ^ and the slider position to calculate the frame number
+            frame_num = start_frame + int((frame_range) * (self.video_slider.value_normalized - 10e-8)) + 1 # 1 -> num_frames
+            current.current_frame = frame_num
 
     def update_video(self):
         """Update the video view by displaying the current frame."""
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            # Get frame to use
-            image, frame_num = current.get_frame(self.video_slider.value_normalized)
+            image = current.get_frame(current.current_frame)
             # Convert the image to a format useable for Kivy
             self.video_widget.texture = kivify_image(image)
 
     def zoom_in(self):
         """Try zoom in."""
-        # Preform the zoom
-        self.zoom_start += 0.02
-        self.zoom_end -= 0.02
-        # Ensure the new zoom is valid
-        new_range = self.zoom_end - self.zoom_start
-        min_range = self.app.current_experiment.zoom_max
-        if new_range < min_range:
-            # Set to min range centred on current values
-            centre = (self.zoom_start + self.zoom_end) / 2
-            self.zoom_start = centre - min_range / 2
-            self.zoom_end = centre + min_range / 2
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Calculate zoom amount
+            old_range = self.zoom_end - self.zoom_start
+            zoom_speed = old_range * 0.05
+            # Divide between left and right according to cursor position
+            # This is a signmoid function - makes values more extreme
+            # This causes zoom to centre on the cursor if possible
+            weight = 1 / (1 + exp(-24 * (self.video_slider.value_normalized - 0.5)))
+            left_zoom_weighting = 2 * weight
+            right_zoom_weighting = 2 * (1 - weight)
+            # Preform the zoom
+            new_zoom_start = self.zoom_start + zoom_speed * left_zoom_weighting
+            new_zoom_end = self.zoom_end - zoom_speed * right_zoom_weighting
+            # Ensure not too small
+            new_range = new_zoom_end - new_zoom_start
+            min_range = self.app.current_experiment.zoom_max
+            if new_range < min_range:
+                # Set to min range centred on current values
+                centre = (self.zoom_start + self.zoom_end) / 2
+                new_zoom_start = centre - min_range / 2
+                new_zoom_end = centre + min_range / 2
+            # Ensure not out of range (sometimes is values like -0.0003201 etc.)
+            if new_zoom_start <= 0:
+                new_zoom_start = 0
+            if new_zoom_end >= 1:
+                new_zoom_end = 1
+            # Set actual values
+            self.zoom_start = new_zoom_start
+            self.zoom_end = new_zoom_end
+            # Maintain cursor position on the same frame
+            self.set_cursor_on_frame(self.app.current_experiment.current_frame)
 
     def zoom_out(self):
         """Try zoom out."""
-        # Preform the zoom
-        self.zoom_start -= 0.02
-        self.zoom_end += 0.02
-        # Ensure the new zoom is valid
-        if self.zoom_start < 0:
-            self.zoom_start = 0
-        if self.zoom_end > 1:
-            self.zoom_end = 1
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Calculate zoom amount
+            old_range = self.zoom_end - self.zoom_start
+            zoom_speed = old_range * 0.05
+            # Divide between left and right according to cursor position
+            # This is a signmoid function - makes values more extreme
+            # This causes zoom to centre on the cursor if possible
+            weight = 1 / (1 + exp(-24 * (self.video_slider.value_normalized - 0.5)))
+            left_zoom_weighting = 2 * (1 - weight)
+            right_zoom_weighting = 2 * weight
+            # Preform the zoom
+            new_zoom_start = self.zoom_start - zoom_speed * left_zoom_weighting
+            new_zoom_end = self.zoom_end + zoom_speed * right_zoom_weighting
+            new_range = min(1, new_zoom_end - new_zoom_start)
+            # Ensure the new zoom is not out of range left
+            if new_zoom_start < 0:
+                # Set to far left with the same range
+                new_zoom_start = 0
+                new_zoom_end = new_range
+            # Ensure the new zoom is not out of range right
+            if new_zoom_end > 1:
+                # Set to far right with the same range
+                new_zoom_start = 1 - new_range
+                new_zoom_end = 1
+            # Set actual values
+            self.zoom_start = new_zoom_start
+            self.zoom_end = new_zoom_end
+            # Maintain cursor position on the same frame
+            self.set_cursor_on_frame(self.app.current_experiment.current_frame)
+
+    def scroll_left(self):
+        """Try scroll (zoom) left."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Calculate scroll amount
+            old_range = self.zoom_end - self.zoom_start
+            scroll_speed = old_range * 0.05
+            # Preform the scroll
+            new_zoom_start = self.zoom_start - scroll_speed
+            new_zoom_end = self.zoom_end - scroll_speed
+            # Ensure the new zoom is not out of range left
+            if new_zoom_start < 0:
+                # Set to far left with the same range
+                new_zoom_start = 0
+                new_zoom_end = old_range
+            # Ensure not too small
+            new_range = new_zoom_end - new_zoom_start
+            min_range = self.app.current_experiment.zoom_max
+            if new_range < min_range:
+                # Set to min range centred on current values
+                centre = (self.zoom_start + self.zoom_end) / 2
+                new_zoom_start = centre - min_range / 2
+                new_zoom_end = centre + min_range / 2
+            # Ensure not out of range (sometimes is values like -0.0003201 etc.)
+            if new_zoom_start <= 0:
+                new_zoom_start = 0
+            if new_zoom_end >= 1:
+                new_zoom_end = 1
+            # Set actual values
+            self.zoom_start = new_zoom_start
+            self.zoom_end = new_zoom_end
+            # Maintain cursor position on the same frame
+            self.set_cursor_on_frame(self.app.current_experiment.current_frame)
+
+    def scroll_right(self):
+        """Try scroll (zoom) right."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Calculate scroll amount
+            old_range = self.zoom_end - self.zoom_start
+            scroll_speed = old_range * 0.05
+            # Preform the scroll
+            new_zoom_start = self.zoom_start + scroll_speed
+            new_zoom_end = self.zoom_end + scroll_speed
+            # Ensure the new zoom is not out of range right
+            if new_zoom_end > 1:
+                # Set to far right with the same range
+                new_zoom_start = 1 - old_range
+                new_zoom_end = 1
+            # Ensure not too small
+            new_range = new_zoom_end - new_zoom_start
+            min_range = self.app.current_experiment.zoom_max
+            if new_range < min_range:
+                # Set to min range centred on current values
+                centre = (self.zoom_start + self.zoom_end) / 2
+                new_zoom_start = centre - min_range / 2
+                new_zoom_end = centre + min_range / 2
+            # Ensure not out of range (sometimes is values like -0.0003201 etc.)
+            if new_zoom_start <= 0:
+                new_zoom_start = 0
+            if new_zoom_end >= 1:
+                new_zoom_end = 1
+            # Set actual values
+            self.zoom_start = new_zoom_start
+            self.zoom_end = new_zoom_end
+            # Maintain cursor position on the same frame
+            self.set_cursor_on_frame(self.app.current_experiment.current_frame)
+
+    def set_cursor_on_frame(self, frame):
+        """Will set the cursor on the given frame number."""
+        # Find the current range of frames in view
+        current = self.app.current_experiment
+        start_frame = int((current.num_frames - 1) * self.zoom_start) + 1
+        end_frame = int((current.num_frames - 1) * self.zoom_end) + 1
+        # If the current frame is in the zoom range
+        current_frame_in_range = start_frame <= frame <= end_frame
+        if current_frame_in_range:
+            # Calculate the proper position
+            frame_range = end_frame - start_frame
+            new_value = (frame - start_frame) / frame_range
+        # If the current frame is out of view leftwards
+        elif frame <= start_frame:
+            # Just set to 0
+            new_value = 0
+        # If the current frame is out of view rightwards
+        elif end_frame <= frame:
+            new_value = 1
+        # This shouldnt be possible, but still
+        else:
+            print('issue !')
+            new_value = 0.5
+        # Is it different to before?
+        new_value_is_same = new_value == self.video_slider.value
+        # Set actual value
+        self.video_slider.value = new_value
+        # Is it different to before?
+        if new_value_is_same:
+            # Update everything visually
+            self.update_fields()
 
     def on_back_btn(self):
         """called by back btn
@@ -177,8 +337,6 @@ class IE3Window(Screen):
                 # Success! Add start.
                 current.event_start_frame = new_start
                 self.ready_for_start = False
-        # update slider_on_event
-        self.update_slider_on_event()
         # Update everything visually
         self.update_fields()
     
@@ -210,8 +368,6 @@ class IE3Window(Screen):
                 current.event_start_frame = None
                 current.event_ranges.append(new_range)
                 self.ready_for_start = True
-        # update slider_on_event
-        self.update_slider_on_event()
         # Update everything visually
         self.update_fields()
     
@@ -236,15 +392,12 @@ class IE3Window(Screen):
                         # Remove range
                         current.event_ranges.remove((start, end))
                         break
-        # update slider_on_event
-        self.update_slider_on_event()
         # Update everything visually
         self.update_fields()
 
     def on_key_up(self, key):
         """called when a key is released up
         - there are many results depending on the key"""
-        self.app.current_experiment.zoom_end -= 0.05
         # If there is a current experiment
         if self.app.current_experiment is not None:
             # If the 's' key is released
@@ -258,6 +411,22 @@ class IE3Window(Screen):
             elif key == "r" and self.slider_on_event:
                 # Remove event 
                 self.remove_here()
+            # If the '<-' key is released
+            elif key == "left":
+                # Scroll left
+                self.scroll_left()
+            # If the 'r' key is released
+            elif key == "right":
+                # Scroll right
+                self.scroll_right()
+            # If the '+/=' key is released
+            elif key == "=":
+                # Zoom in
+                self.zoom_in()
+            # If the '-/_' key is released
+            elif key == "-":
+                # Zoom out
+                self.zoom_out()
         return True
 
     def update_slider_on_event(self):
@@ -283,30 +452,33 @@ class IE3Window(Screen):
         # Update with final value
         self.slider_on_event = on_event
 
-
     def on_current_experiment(self, instance, current_experiment):
         """Called when current experiment changes. Updates slider"""
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
             # Update slider
-            self.video_slider.value = (current.current_frame - 1) / (current.num_frames - 1)
+            new_value = (current.current_frame - 1) / (current.num_frames - 1)
+            new_value_is_same = new_value == self.video_slider.value
+            self.video_slider.value = new_value
         else:
             # Update slider
-            self.video_slider.value = 0
+            new_value = 0
+            new_value_is_same = new_value == self.video_slider.value
+            self.video_slider.value = new_value
         # Update bools
         self.ready_for_start = False if current is None else current.event_start_frame is None
         # Reset zoom
-        self.zoom_start = 0.0
-        self.zoom_end = 1.0
-        # Update visual stuff
-        self.update_slider_on_event()
+        self.zoom_start = 0
+        self.zoom_end = 1
+        # If cursor value didnt change
+        if new_value_is_same:
+            # Update everything visually
+            self.update_fields()
         self.thumbnail_bar.update_thumbnails(different_exp=True)
 
     def on_slider(self):
         """Called when slider value changes. Updates things."""
-        # update slider_on_event
-        self.update_slider_on_event()
         # Update everything visually
         self.update_fields()
 
@@ -327,23 +499,32 @@ class IonCurrentView(Image):
         if self.collide_point(*pos):
             # Take position as proportion of widget width
             self.video_slider.value = (pos[0] - self.x) / self.width
-        # update slider_on_event
-        self.ie3_window.update_slider_on_event()
 
     def _on_touch_down(self, touch):
         """Called when touch down."""
         # If is on the ion current view
         if self.collide_point(*touch.pos):
+            # Get the button and the shift key
+            shift_is_down = self.app.shift_is_down
+            button = touch.button
+            # If the touch is a scrollleft or down with shift
+            if button == "scrollleft" or (button == "scrolldown" and shift_is_down):
+                # Try scroll left
+                self.ie3_window.scroll_left()
+            # If the touch is a scrollright or up with shift
+            elif button == "scrollright" or (button == "scrollup" and shift_is_down):
+                # Try scroll right
+                self.ie3_window.scroll_right()
             # If the touch is a scrolldowm
-            if touch.button == "scrolldowm":
+            elif button == "scrolldown":
                 # Try zoom in
                 self.ie3_window.zoom_in()
             # If the touch is a scrollup
-            elif touch.button == "scrollup":
+            elif button == "scrollup":
                 # Try zoom out
                 self.ie3_window.zoom_out()
             # If the touch is a left click
-            elif touch.button == "left":
+            elif button == "left":
                 # Set frame
                 self.set_frame(touch.pos)
 
@@ -360,7 +541,7 @@ class IonCurrentView(Image):
         """Called when size of widget changes."""
         # Update the widget's texture
         self.update_view()
-    
+
     def update_view(self):
         """Updates the widget's texture."""
         # Get widget dimensions
@@ -370,38 +551,84 @@ class IonCurrentView(Image):
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
+            # Ensure zoom not out of range (sometimes is values like -0.0003201 etc.)
+            if self.ie3_window.zoom_start <= 0:
+                self.ie3_window.zoom_start = 0
+            if self.ie3_window.zoom_end >= 1:
+                self.ie3_window.zoom_end = 1
             # Get params
-            ranges = current.event_ranges
-            num_frames = current.num_frames
+            start_frame = int((current.num_frames - 1) * self.ie3_window.zoom_start) + 1
+            end_frame = int((current.num_frames - 1) * self.ie3_window.zoom_end) + 1
+            frame_range = end_frame - start_frame
+            frame_range = 1 if frame_range < 1 else frame_range
             current_frame = current.current_frame
             event_start_frame = current.event_start_frame
-            # Draw grey rectangle at x position of slider (for frame)
-            x1 = int((width - 1) * (current_frame - 1) / (num_frames))
-            x2 = int((width - 1) * (current_frame) / (num_frames))
-            cv2.rectangle(image, (x1, 0), (x2, height), ION_CURRENT_FRAME_COLOUR, -1)
+            current_frame_in_range = start_frame <= current_frame <= end_frame
+            # If the current frame is in the zoom range
+            if current_frame_in_range:
+                # Draw grey rectangle at x position of slider (for frame) (frame - start_frame - 1) / (frame_range - 1)
+                x1 = int(width * (current_frame - start_frame) / (frame_range + 1))
+                x2 = int(width * (current_frame - start_frame + 1) / (frame_range + 1))
+                cv2.rectangle(image, (x1, 0), (x2, height), ION_CURRENT_FRAME_COLOUR, -1)
             # Draw vertical blue box at frame of start of event
             if event_start_frame is not None:
-                x1 = int((width - 1) * (event_start_frame - 1) / (num_frames))
-                x2 = int((width - 1) * (event_start_frame) / (num_frames))
-                # Draw vertical blue box at frame of start of event
-                cv2.rectangle(image, (x1, 0), (x2, height), ION_EVENT_START_COLOUR, -1)
+                # If the start frame is in the zoom range
+                start_frame_in_range = start_frame <= event_start_frame <= end_frame
+                if start_frame_in_range:
+                    # Draw vertical blue box at frame of start of event
+                    x1 = int(width * (event_start_frame - start_frame) / (frame_range + 1))
+                    x2 = int(width * (event_start_frame - start_frame + 1) / (frame_range + 1))
+                    cv2.rectangle(image, (x1, 0), (x2, height), ION_EVENT_START_COLOUR, -1)
             # Draw event ranges
-            for start_frame, stop_frame in ranges:
-                start_x1 = int((width - 1) * (start_frame - 1) / (num_frames))
-                stop_x2 = int((width - 1) * (stop_frame) / (num_frames))
-                # Draw range
-                cv2.rectangle(image, (start_x1, 0), (stop_x2 - 1, height), ION_EVENT_COLOUR, -1)
-                # Draw edges
-                cv2.line(image, (start_x1, 0), (start_x1, height), ION_EVENT_EDGE_COLOUR, 1)
-                cv2.line(image, (stop_x2, 0), (stop_x2, height), ION_EVENT_EDGE_COLOUR, 1)
+            for event_start_frame, event_stop_frame in current.event_ranges:
+                # Is the start frame is in the zoom range?
+                start_in_range = start_frame <= event_start_frame <= end_frame
+                end_in_range = start_frame <= event_stop_frame <= end_frame
+                # If event visible at all
+                if start_in_range or end_in_range:
+                    # Event in full view
+                    if start_in_range and end_in_range:
+                        start_x1 = int(width * (event_start_frame - start_frame) / (frame_range + 1))
+                        stop_x2 = int(width * (event_stop_frame - start_frame + 1) / (frame_range + 1))
+                    # Event over right edge
+                    elif start_in_range:
+                        start_x1 = int(width * (event_start_frame - start_frame) / (frame_range + 1))
+                        stop_x2 = int(width * (frame_range + 1) / (frame_range + 1))
+                    # Event over left edge
+                    elif end_in_range:
+                        start_x1 = int(width * (frame_range) / (frame_range + 1))
+                        stop_x2 = int(width * (event_stop_frame - start_frame + 1) / (frame_range + 1))
+                    # Draw range
+                    cv2.rectangle(image, (start_x1, 0), (stop_x2 - 1, height), ION_EVENT_COLOUR, -1)
+                    # Draw edges
+                    cv2.line(image, (start_x1, 0), (start_x1, height), ION_EVENT_EDGE_COLOUR, 1)
+                    cv2.line(image, (stop_x2, 0), (stop_x2, height), ION_EVENT_EDGE_COLOUR, 1)
             # If using the ion current, draw it
             if self.ie3_window.use_ion:
+                # Decide to use down sampled signal or not
+                downsample_too_small = len(current.downsampled_ioncurr_sig) * (self.ie3_window.zoom_end - self.ie3_window.zoom_start) < 25000
+                use_OG = self.ie3_window.always_use_OG_sig or downsample_too_small
                 # Get the signal (either original or downsampled)
-                signal = current.downsampled_ioncurr_sig if self.ie3_window.use_downsampled else current.ioncurr_sig
+                signal = current.ioncurr_sig if use_OG else current.downsampled_ioncurr_sig
+                # Trim signal for zoom
+                start_sample_i = int((len(signal) - 1) * self.ie3_window.zoom_start)
+                end_sample_i = int((len(signal) - 1) * self.ie3_window.zoom_end)
+                # If they don't cover a whole value
+                if start_sample_i == end_sample_i:
+                    # If not at start
+                    if start_sample_i > 0:
+                        # Include previous one
+                        start_sample_i -= 1
+                    else:
+                        # include the next one
+                        end_sample_i += 1
+                signal = signal[start_sample_i:end_sample_i]
                 # Normalize the signal values to fit within the height of the image
                 gap_x, gap_y = 1, 3 # this gives some breathing room
                 # (use downsampled data)
                 sig_min, sig_max = signal.min(), signal.max()
+                if sig_min == sig_max:
+                    sig_min, sig_max = 0, 1
                 normalized_signal = (signal - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
                 # Get values to draw (min/max values for every x value)
                 min_array, max_array = split_min_max(normalized_signal, width - gap_x * 2)
@@ -411,9 +638,9 @@ class IonCurrentView(Image):
                     min_sig, max_sig = int(min_array[x]), int(max_array[x])
                     # Draw a verticle line on that x value
                     cv2.line(image, (x + gap_x, min_sig), (x + gap_x, max_sig), ION_SIG_COLOUR, 1)
-        # Draw vertical red line at x position of slider
-        x = int((width - 1) * self.video_slider.value_normalized)
-        cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)
+            # Draw vertical red line at x position of slider
+            x = int((width - 1) * self.video_slider.value_normalized)
+            cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)
         # Set as texture
         self.texture = kivify_image(image)
 
@@ -436,16 +663,40 @@ class ThumbnailBar(BoxLayout):
         # Update the thumbnail bar!
         self.update_thumbnails()
 
+    def _on_touch_down(self, touch):
+        """Called when touch down."""
+        # If is on the thumbnail bar
+        if self.collide_point(*touch.pos):
+            # Get the button and the shift key
+            shift_is_down = self.app.shift_is_down
+            button = touch.button
+            # If the touch is a scrollleft or down with shift
+            if button == "scrollleft" or (button == "scrolldown" and shift_is_down):
+                # Try scroll left
+                self.ie3_window.scroll_left()
+            # If the touch is a scrollright or up with shift
+            elif button == "scrollright" or (button == "scrollup" and shift_is_down):
+                # Try scroll right
+                self.ie3_window.scroll_right()
+            # If the touch is a scrolldowm
+            elif button == "scrolldown":
+                # Try zoom in
+                self.ie3_window.zoom_in()
+            # If the touch is a scrollup
+            elif button == "scrollup":
+                # Try zoom out
+                self.ie3_window.zoom_out()
+
     def update_thumbnails(self, different_exp=False):
         """Checks current experiment's frames and dimensions of thumbnail bar to update the thumbnail bar."""
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
             # Get dimensions of bar and frames
-            frame_width, frame_height = current.first_frame.shape[:2]
+            frame_height, frame_width = current.first_frame.shape[:2]
             bar_width, bar_height = self.size
             # Use this ^ to determine number of frames to fit
-            num_thumbnails = int(2 * bar_width / (frame_width * bar_height / frame_height))
+            num_thumbnails = int(bar_width / (frame_width * bar_height / frame_height))
             # If not enough frames
             if num_thumbnails > current.num_frames:
                 # Use all frames (do our best lol)
@@ -460,7 +711,12 @@ class ThumbnailBar(BoxLayout):
                     # Get the proportion through the video
                     prop = i / (num_thumbnails - 1)
                     # Get frame to use
-                    image, frame_num = current.get_frame(prop)
+                    start_frame = int((current.num_frames - 1) * self.ie3_window.zoom_start)
+                    end_frame = int((current.num_frames - 1) * self.ie3_window.zoom_end) + 1
+                    frame_range = end_frame - start_frame
+                    # Calculate the frame number based on the proportion
+                    frame_num = start_frame + int((frame_range) * (prop - 10e-8)) + 1 # 1 -> num_frames
+                    image = current.get_frame(frame_num)
                     # Downsize frame
                     min_width, min_height = int(bar_width / frame_width), int(bar_height)
                     image = downsample_image(image, min_width, min_height)
@@ -478,8 +734,9 @@ class ThumbnailBar(BoxLayout):
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            # Set cursor x according to slider position
-            self.cursor_x = self.width * self.video_slider.value_normalized
+            # Set cursor x according to slider position and zoom
+            zoom_range = self.ie3_window.zoom_end - self.ie3_window.zoom_start
+            self.cursor_x = self.width * ((self.video_slider.value_normalized * zoom_range) + self.ie3_window.zoom_start)
         else:
             self.cursor_x = -99999
         
@@ -505,7 +762,5 @@ class Thumbnail(Image):
         current = self.app.current_experiment
         if current is not None and self.collide_point(*pos):
             # Set current frame as this frame
-            self.ie3_window.video_slider.value = (self.frame_num - 1) / (current.num_frames - 1)
-            # update slider_on_event
-            self.ie3_window.update_slider_on_event()
+            self.ie3_window.set_cursor_on_frame(self.frame_num)
             

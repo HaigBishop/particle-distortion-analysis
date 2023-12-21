@@ -543,6 +543,7 @@ WindowManager:
                         padding: [0, 20]
                         size_hint_x: None
                         width: self.height
+                        on_press: root.scroll_left()
                     BlankButton:
                         text:'+'
                         font_name: 'resources\\Inter.ttf'
@@ -550,6 +551,7 @@ WindowManager:
                         padding: [0, 20]
                         size_hint_x: None
                         width: self.height
+                        on_press: root.zoom_in()
                     BlankButton:
                         text:'−'
                         font_name: 'resources\\Inter.ttf'
@@ -557,6 +559,7 @@ WindowManager:
                         padding: [0, 20]
                         size_hint_x: None
                         width: self.height
+                        on_press: root.zoom_out()
                     BlankButton:
                         text:'→'
                         font_name: 'resources\\Inter.ttf'
@@ -564,6 +567,7 @@ WindowManager:
                         padding: [0, 20]
                         size_hint_x: None
                         width: self.height
+                        on_press: root.scroll_right()
                     Label:
                         id: ion_location_label
                         color: WHITE
@@ -676,6 +680,7 @@ WindowManager:
                             size_hint:(1,0.01)
                         ThumbnailBar:
                             id: thumbnail_bar
+                            ie3_window: root
                             video_slider: video_slider
                             size_hint: (1, 0.1)
                             canvas.after:
@@ -1202,6 +1207,7 @@ WindowManager:
 <ThumbnailBar>:
     orientation: 'horizontal'
     spacing: 1
+    on_touch_down: root._on_touch_down(args[1])
 
 
 

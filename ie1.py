@@ -12,7 +12,6 @@ from kivy.clock import Clock
 
 # Import modules
 from plyer import filechooser
-import cv2
 import os
 
 # Import local modules
@@ -84,24 +83,28 @@ class IE1Window(Screen):
         # Loop all experiments
         for exp in self.app.experiments:
             cap = exp.cap
-            # Check number of frames
-            num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if num_frames < 3:
-                errors.append("invalid number of video frames (" + str(exp.name) + ")\n")
-            # Check resolution
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            if width < 128 or height < 128:
-                errors.append("invalid video resolution (" + str(exp.name) + ")\n")
-            # Check number of channels
-            # (by getting the shape of the first frame)
-            frame = get_frame(cap, 1)
-            _, _, num_channels = frame.shape
-            if int(num_channels) not in [1, 3]:
-                errors.append("invalid number of video channels (" + str(exp.name) + ")\n")
-            # Add this job's name and file loc to lists (to check for duplicates)
-            name_list.append(exp.name)
-            vid_loc_list.append(exp.vid_loc)
+            # Get the first frame
+            first_frame = get_frame(cap, 1)
+            # If couldn't read video
+            if first_frame is None:
+                errors.append("cannot read video file (" + str(exp.name) + ")\n")
+            else:
+                # Check number of frames
+                if exp.num_frames < 3:
+                    errors.append("invalid number of video frames (" + str(exp.name) + ")\n")
+                # Check resolution
+                height = int(exp.shape[0])
+                width = int(exp.shape[1])
+                if width < 128 or height < 128:
+                    errors.append("invalid video resolution (" + str(exp.name) + ")\n")
+                # Check number of channels
+                # (by getting the shape of the first frame)
+                _, _, num_channels = first_frame.shape
+                if int(num_channels) not in [1, 3]:
+                    errors.append("invalid number of video channels (" + str(exp.name) + ")\n")
+                # Add this job's name and file loc to lists (to check for duplicates)
+                name_list.append(exp.name)
+                vid_loc_list.append(exp.vid_loc)
         # Check for duplicate files
         if len(vid_loc_list) != len(set(vid_loc_list)):
             # Duplicate files
@@ -282,6 +285,11 @@ class IE1Window(Screen):
     def update_ion_files_attached(self):
         any_exps = len(self.app.experiments) != 0
         self.ion_files_attached = any_exps and all([exp.ion_loc != '' for exp in self.app.experiments])
+
+    def on_current_experiment(self, instance, current_experiment):
+        """Called."""
+        # Update visual stuff
+        self.update_fields()
 
     def update_fields(self):
         """updates the text inputs and the 'location label'

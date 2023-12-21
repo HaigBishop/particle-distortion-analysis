@@ -13,7 +13,6 @@ from kivy.app import App
 # Import modules
 import os
 from subprocess import Popen as p_open
-import cv2
 from scipy.signal import decimate
 
 # Import local modules
@@ -37,9 +36,10 @@ class Experiment():
         # Video file
         self.vid_loc = vid_loc
         self.current_frame = 1
-        self.first_frame = first_frame(vid_loc)
         self.cap = read_vid(vid_loc)
-        self.num_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.first_frame = get_frame(self.cap, 1)
+        self.shape = self.first_frame.shape
+        self.num_frames = count_frames(vid_loc)
         # Grab the dates of creation of the files
         self.vid_date = file_date(self.vid_loc)
         
@@ -56,10 +56,8 @@ class Experiment():
         self.event_start_frame = None
         self.event_ranges = []
 
-        # Zoom ranges
-        self.zoom_start = 0.1
-        self.zoom_end = 0.9
-        self.zoom_max = 0.1
+        # Maximum zoom in zoom range
+        self.zoom_max = 0.01
     
     def add_ion_file(self, file_loc):
         """Reads a TDMS file and holds information in this object.
@@ -81,6 +79,8 @@ class Experiment():
             # Make 2x smaller
             self.downsampled_ioncurr_sig = decimate(self.downsampled_ioncurr_sig, 2)
             self.decimation_factor *= 2
+        # Set maximum zoom in zoom range according to the length of the signal
+        self.zoom_max = min(max(0.01, 5000 / self.ioncurr_len), 1.0)
         
     def remove_ion_file(self):
         """Resets the ion current related data."""
@@ -93,12 +93,15 @@ class Experiment():
         # Ion current time metadata
         self.t_step, self.sample_freq, self.loop_factor, self.time_scale = None, None, None, None
 
-    def get_frame(self, prop):
-        """prop is proportion through the video"""
-        # Calculate the frame number based on the proportion
-        target_frame = int((self.num_frames) * (prop - 10e-8)) + 1 # 1 -> num_frames
-        self.current_frame = target_frame
-        return get_frame(self.cap, target_frame - 1), target_frame
+    def get_frame(self, frame_num):
+        """yeah"""
+        frame_num = self.num_frames if frame_num > self.num_frames else frame_num
+        frame = get_frame(self.cap, frame_num - 1)
+        # If didn't work
+        if frame is None:
+            # Return a blank image
+            frame = np.ones(self.shape, dtype=np.uint8) * 255
+        return frame
 
 
 class ExperimentBox(Button):
@@ -122,8 +125,6 @@ class ExperimentBox(Button):
         - scrolls textboxes back to the start"""
         # This is now the current experiment
         self.app.select_experiment(self.experiment)
-        # Update the visuals
-        self.window.update_fields()
 
     def on_open_btn(self):
         """Called by button on experiment box
