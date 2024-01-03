@@ -19,7 +19,7 @@ from math import exp
 # Import local modules
 from popup_elements import BackPopup
 from jobs import ExperimentBox
-from file_management import kivify_image, split_min_max, downsample_image
+from file_management import kivify_image, split_min_max, downsample_image, align_sig_to_frames
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -88,9 +88,12 @@ class IE3Window(Screen):
             if self.use_ion and current.ion_loc != '':
                 self.ion_location_label.text = str(current.ion_loc)
                 self.ion_view.update_view()
+                self.ion_range_label.text = 'Ion range: ' + str(current.ion_frame_range[0]) + ' to ' + str(current.ion_frame_range[1])
             else:
                 self.ion_location_label.text = 'No file selected'
                 self.ion_view.update_view()
+                self.ion_range_label.text = ''
+                self.ion_adjust_btn.state = 'normal'
             # Update the thumbnail cursor
             self.thumbnail_bar.update_cursor()
         else:
@@ -100,8 +103,9 @@ class IE3Window(Screen):
             self.location_label.text = "No experiment selected"
             self.video_widget.texture = None
             self.ion_location_label.text = 'No file selected'
-            # Update frame label
+            # Update frame labels
             self.frame_label.text = ''
+            self.ion_range_label.text = ''
             self.ion_view.texture = None
             # Update the thumbnail cursor
             self.thumbnail_bar.cursor_x = -9999
@@ -268,6 +272,17 @@ class IE3Window(Screen):
             # Maintain cursor position on the same frame
             self.set_cursor_on_frame(self.app.current_experiment.current_frame)
 
+    def reset_zoom(self):
+        """Reset the zoom to 100%."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Set actual values
+            self.zoom_start = 0
+            self.zoom_end = 1
+            # Maintain cursor position on the same frame
+            self.set_cursor_on_frame(self.app.current_experiment.current_frame)
+
     def set_cursor_on_frame(self, frame):
         """Will set the cursor on the given frame number."""
         # Find the current range of frames in view
@@ -413,20 +428,39 @@ class IE3Window(Screen):
                 self.remove_here()
             # If the '<-' key is released
             elif key == "left":
-                # Scroll left
-                self.scroll_left()
+                # If not adjusting the ion data
+                if self.ion_adjust_btn.state != 'down':
+                    self.scroll_left() 
+                else:
+                    self.ion_adjust_left()
             # If the 'r' key is released
             elif key == "right":
-                # Scroll right
-                self.scroll_right()
-            # If the '+/=' key is released
+                # If not adjusting the ion data
+                if self.ion_adjust_btn.state != 'down':
+                    self.scroll_right() 
+                else:
+                    self.ion_adjust_right()
+            # If the '+' key is released
             elif key == "=":
-                # Zoom in
-                self.zoom_in()
-            # If the '-/_' key is released
+                # If not adjusting the ion data
+                if self.ion_adjust_btn.state != 'down':
+                    self.zoom_in() 
+                else:
+                    self.ion_adjust_in()
+            # If the '-' key is released
             elif key == "-":
-                # Zoom out
-                self.zoom_out()
+                # If not adjusting the ion data
+                if self.ion_adjust_btn.state != 'down':
+                    self.zoom_out() 
+                else:
+                    self.ion_adjust_out()
+            # If the '0' key is released
+            elif key == "0":
+                # If not adjusting the ion data
+                if self.ion_adjust_btn.state != 'down':
+                    self.reset_zoom() 
+                else:
+                    self.ion_adjust_reset()
         return True
 
     def update_slider_on_event(self):
@@ -451,6 +485,78 @@ class IE3Window(Screen):
                         break
         # Update with final value
         self.slider_on_event = on_event
+
+    def ion_adjust_left(self, amount=1):
+        """Try shift the ion data to the left."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the scroll
+            new_ion_start = start - amount
+            new_ion_end = stop - amount
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_right(self, amount=1):
+        """Try shift the ion data to the right."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the scroll
+            new_ion_start = start + amount
+            new_ion_end = stop + amount
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_in(self, amount=1):
+        """Try zoom into the ion data"""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the zoom
+            new_ion_start = start - amount
+            new_ion_end = stop + amount
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_out(self, amount=1):
+        """Try zoom into the ion data"""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the zoom
+            new_ion_start = start + amount
+            new_ion_end = stop - amount
+            # ensure not too small
+            min_num_frames = min(100, current.num_frames)
+            if new_ion_end - new_ion_start < min_num_frames:
+                centre = (stop + start) / 2
+                new_ion_start = int(centre - min_num_frames / 2)
+                new_ion_end = int(centre + min_num_frames / 2)
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_reset(self):
+        """Reset the ion data's alignment."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Set actual value
+            current.ion_frame_range = (1, current.num_frames)
+            # Update everything visually
+            self.update_fields()
 
     def on_current_experiment(self, instance, current_experiment):
         """Called when current experiment changes. Updates slider"""
@@ -509,20 +615,32 @@ class IonCurrentView(Image):
             button = touch.button
             # If the touch is a scrollleft or down with shift
             if button == "scrollleft" or (button == "scrolldown" and shift_is_down):
-                # Try scroll left
-                self.ie3_window.scroll_left()
+                # If not adjusting the ion data
+                if self.ie3_window.ion_adjust_btn.state != 'down':
+                    self.ie3_window.scroll_left() 
+                else:
+                    self.ie3_window.ion_adjust_left(amount=25)
             # If the touch is a scrollright or up with shift
             elif button == "scrollright" or (button == "scrollup" and shift_is_down):
-                # Try scroll right
-                self.ie3_window.scroll_right()
+                # If not adjusting the ion data
+                if self.ie3_window.ion_adjust_btn.state != 'down':
+                    self.ie3_window.scroll_right() 
+                else:
+                    self.ie3_window.ion_adjust_right(amount=25)
             # If the touch is a scrolldowm
             elif button == "scrolldown":
-                # Try zoom in
-                self.ie3_window.zoom_in()
+                # If not adjusting the ion data
+                if self.ie3_window.ion_adjust_btn.state != 'down':
+                    self.ie3_window.zoom_in() 
+                else:
+                    self.ie3_window.ion_adjust_in(amount=25)
             # If the touch is a scrollup
             elif button == "scrollup":
-                # Try zoom out
-                self.ie3_window.zoom_out()
+                # If not adjusting the ion data
+                if self.ie3_window.ion_adjust_btn.state != 'down':
+                    self.ie3_window.zoom_out() 
+                else:
+                    self.ie3_window.ion_adjust_out(amount=25)
             # If the touch is a left click
             elif button == "left":
                 # Set frame
@@ -610,6 +728,8 @@ class IonCurrentView(Image):
                 use_OG = self.ie3_window.always_use_OG_sig or downsample_too_small
                 # Get the signal (either original or downsampled)
                 signal = current.ioncurr_sig if use_OG else current.downsampled_ioncurr_sig
+                # Align/zoom signal to the video
+                signal = align_sig_to_frames(signal, current.num_frames, current.ion_frame_range)
                 # Trim signal for zoom
                 start_sample_i = int((len(signal) - 1) * self.ie3_window.zoom_start)
                 end_sample_i = int((len(signal) - 1) * self.ie3_window.zoom_end)
@@ -626,7 +746,7 @@ class IonCurrentView(Image):
                 # Normalize the signal values to fit within the height of the image
                 gap_x, gap_y = 1, 3 # this gives some breathing room
                 # (use downsampled data)
-                sig_min, sig_max = signal.min(), signal.max()
+                sig_min, sig_max = np.nanmin(signal), np.nanmax(signal)
                 if sig_min == sig_max:
                     sig_min, sig_max = 0, 1
                 normalized_signal = (signal - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
@@ -635,9 +755,10 @@ class IonCurrentView(Image):
                 # For each pixel on the x-axis corresponding to a window of signal
                 for x in range(width - gap_x * 2):
                     # Get the range of values here
-                    min_sig, max_sig = int(min_array[x]), int(max_array[x])
-                    # Draw a verticle line on that x value
-                    cv2.line(image, (x + gap_x, min_sig), (x + gap_x, max_sig), ION_SIG_COLOUR, 1)
+                    min_sig, max_sig = min_array[x], max_array[x]
+                    if not np.isnan(min_sig) and not np.isnan(max_sig):
+                        # Draw a verticle line on that x value
+                        cv2.line(image, (x + gap_x, int(min_sig)), (x + gap_x, int(max_sig)), ION_SIG_COLOUR, 1)
             # Draw vertical red line at x position of slider
             x = int((width - 1) * self.video_slider.value_normalized)
             cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)

@@ -51,6 +51,8 @@ class Experiment():
         self.downsampled_ioncurr_sig, self.decimation_factor = None, None
         # Ion current time metadata
         self.t_step, self.sample_freq, self.loop_factor, self.time_scale = None, None, None, None
+        # Shift and zoom to line up video and current data
+        self.ion_frame_range = None
 
         # Event params (used when selecting events)
         self.event_start_frame = None
@@ -81,6 +83,8 @@ class Experiment():
             self.decimation_factor *= 2
         # Set maximum zoom in zoom range according to the length of the signal
         self.zoom_max = min(max(0.01, 5000 / self.ioncurr_len), 1.0)
+        # Set shift and zoom to first and last frames
+        self.ion_frame_range = (1, self.num_frames)
         
     def remove_ion_file(self):
         """Resets the ion current related data."""
@@ -92,6 +96,8 @@ class Experiment():
         self.downsampled_ioncurr_sig, self.decimation_factor = None, None
         # Ion current time metadata
         self.t_step, self.sample_freq, self.loop_factor, self.time_scale = None, None, None, None
+        # Shift and zoom to line up video and current data
+        self.ion_frame_range = None
 
     def get_frame(self, frame_num):
         """yeah"""

@@ -479,9 +479,11 @@ WindowManager:
     exp_scroll: exp_scroll
     location_label: location_label
     ion_location_label: ion_location_label
+    ion_adjust_btn: ion_adjust_btn
     video_widget: video_widget
     video_slider: video_slider
     frame_label: frame_label
+    ion_range_label: ion_range_label
     ion_view: ion_view
     thumbnail_bar: thumbnail_bar
     GridLayout:
@@ -534,44 +536,23 @@ WindowManager:
                 size_hint_y: 1
                 # Buttons row
                 GridLayout:
-                    cols: 5
+                    id: button_layout
+                    cols: 7
                     size_hint_y: 0.1
-                    BlankButton:
-                        text:'←'
+                    ToggleBlankButton:
+                        id: ion_adjust_btn
+                        disabled: not root.use_ion
+                        text:'⇔'
                         font_name: 'resources\\Inter.ttf'
                         font_size: 22
                         padding: [0, 20]
                         size_hint_x: None
                         width: self.height
-                        on_press: root.scroll_left()
-                    BlankButton:
-                        text:'+'
-                        font_name: 'resources\\Inter.ttf'
-                        font_size: 22
-                        padding: [0, 20]
-                        size_hint_x: None
-                        width: self.height
-                        on_press: root.zoom_in()
-                    BlankButton:
-                        text:'−'
-                        font_name: 'resources\\Inter.ttf'
-                        font_size: 22
-                        padding: [0, 20]
-                        size_hint_x: None
-                        width: self.height
-                        on_press: root.zoom_out()
-                    BlankButton:
-                        text:'→'
-                        font_name: 'resources\\Inter.ttf'
-                        font_size: 22
-                        padding: [0, 20]
-                        size_hint_x: None
-                        width: self.height
-                        on_press: root.scroll_right()
                     Label:
                         id: ion_location_label
                         color: WHITE
-                        size_hint_x: 1
+                        size_hint_x: None
+                        width: button_layout.width - button_layout.height * 6
                         text: 'No file(s) selected'
                         padding: [20, 0, 0, 10]
                         halign: 'left'
@@ -579,6 +560,46 @@ WindowManager:
                         text_size: self.size
                         shorten: True
                         font_size: 16
+                    BlankButton:
+                        text:'←'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 22
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                        on_press: root.scroll_left() if ion_adjust_btn.state != 'down' else root.ion_adjust_left()
+                    BlankButton:
+                        text:'+'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 24
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                        on_press: root.zoom_in() if ion_adjust_btn.state != 'down' else root.ion_adjust_in()
+                    BlankButton:
+                        text:'◦'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 30
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                        on_press: root.reset_zoom() if ion_adjust_btn.state != 'down' else root.ion_adjust_reset()
+                    BlankButton:
+                        text:'−'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 24
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                        on_press: root.zoom_out() if ion_adjust_btn.state != 'down' else root.ion_adjust_out()
+                    BlankButton:
+                        text:'→'
+                        font_name: 'resources\\Inter.ttf'
+                        font_size: 22
+                        padding: [0, 20]
+                        size_hint_x: None
+                        width: self.height
+                        on_press: root.scroll_right() if ion_adjust_btn.state != 'down' else root.ion_adjust_right()
                 GridLayout:
                     id: image_row
                     size_hint_y: 0.2
@@ -657,6 +678,19 @@ WindowManager:
                                 color: WHITE
                                 size_hint: (1, None)
                                 height: 40
+                                y: 40 if root.use_ion else 10
+                                padding: [20, 0, 0, 0]
+                                halign: 'left'
+                                font_name: 'resources\\Inter.ttf'
+                                text_size: self.size
+                                shorten: True
+                                font_size: 20
+                            Label:
+                                id: ion_range_label
+                                color: WHITE
+                                size_hint: (1, None)
+                                height: 40
+                                y: 0
                                 padding: [20, 0, 0, 10]
                                 halign: 'left'
                                 font_name: 'resources\\Inter.ttf'
@@ -989,6 +1023,26 @@ WindowManager:
 # =========================================================================================
 
 <BlankButton@Button>:
+    background_normal: ''
+    background_color: CLEAR
+    background_down: ''
+    border: CLEAR
+    color: TANGY
+    canvas.before:
+        Color:
+            rgba: (self.state == 'normal') and CLEAR or DIM_TANGY
+        RoundedRectangle:
+            pos: self.x+2, self.y+2
+            size: self.width-4, self.height-4
+            radius: [14,]
+
+
+
+
+
+# =========================================================================================
+
+<ToggleBlankButton@ToggleButton>:
     background_normal: ''
     background_color: CLEAR
     background_down: ''

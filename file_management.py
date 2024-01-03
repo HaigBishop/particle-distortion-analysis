@@ -38,7 +38,45 @@ def count_frames(video_loc):
         clip.close()
         # Using this estimate, find a counting start point
         start_frame = frame_count
-        jump_amount = 150
+        jump_amount = 100
+        was_good = None
+        # Jump around frames until you find roughly where the end of the video is
+        while True:
+            # Try read this frame
+            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+            is_good, frame = cap.read()
+            # If first loop
+            if was_good is None:
+                # Act like nothing has changed
+                was_good = is_good
+            # If this frame is good and the previous frame was not good
+            if is_good is True and was_good is False:
+                # Found the end point roughly - end here
+                start_frame -= 1
+                break
+            # If this frame is good and the previous frame was also good
+            elif is_good is True and was_good is True:
+                # Not at end yet - jump forward
+                start_frame += jump_amount
+                was_good = True
+            # If this frame is not good and the previous frame was good
+            elif is_good is False and was_good is True:
+                # Found the end point roughly - end here
+                start_frame -= jump_amount + 1
+                break
+            # If this frame is not good and the previous frame was also not good
+            elif is_good is False and was_good is False:
+                # Not at end yet - jump backwards
+                start_frame -= jump_amount
+                was_good = False
+            # What.. this isn't good.
+            else:
+                # Abort
+                start_frame = 0
+                break
+        # Using this estimate, find a counting start point
+        start_frame = start_frame
+        jump_amount = 10
         was_good = None
         # Jump around frames until you find roughly where the end of the video is
         while True:
@@ -295,7 +333,7 @@ def split_min_max(signal, width):
         b = b + 1 if a == b else b
         # Get split range and their min and max value
         current_window = signal[a:b]
-        min_array[i], max_array[i] = current_window.min(), current_window.max()
+        min_array[i], max_array[i] = np.nanmin(current_window), np.nanmax(current_window)
         # Move to the next split
         j += ideal_window_size
     return min_array, max_array
@@ -316,3 +354,24 @@ def downsample_image(image, min_width, min_height):
     resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
     return resized_image
 
+def align_sig_to_frames(signal, num_frames, frame_range):
+    # Extract the frame range for the signal
+    start, stop = frame_range
+    # Calculate the amount of chopping and buffering to perform
+    zoom = (stop - start + 1) / num_frames
+    frames_to_chop_start = max(0, 1 - start) / zoom
+    frames_to_buffer_start = max(0, -1 * (1 - start)) / zoom
+    frames_to_chop_stop = max(0, stop - num_frames) / zoom
+    frames_to_buffer_stop = max(0, -1 * (stop - num_frames)) / zoom
+    num_samples = len(signal)
+    samples_to_chop_start = int(num_samples * frames_to_chop_start / num_frames)
+    samples_to_buffer_start = int(num_samples * frames_to_buffer_start / num_frames)
+    samples_to_chop_stop = int(num_samples * frames_to_chop_stop / num_frames)
+    samples_to_buffer_stop = int(num_samples * frames_to_buffer_stop / num_frames)
+    # Chop and add buffers to the signal
+    start_buffer = np.full(samples_to_buffer_start, np.nan, dtype=np.float64)
+    chopped_signal = signal[samples_to_chop_start : num_samples - samples_to_chop_stop]
+    stop_buffer = np.full(samples_to_buffer_stop, np.nan, dtype=np.float64)
+    # Add buffers to the signal
+    new_signal = np.concatenate((start_buffer, chopped_signal, stop_buffer))
+    return new_signal

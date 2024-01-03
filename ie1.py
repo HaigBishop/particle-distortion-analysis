@@ -158,7 +158,7 @@ class IE1Window(Screen):
         - opens the file select window
         - selection is sent to self.selected()"""
         # Only allow selection of TDMS
-        filters = [("AVI files", "*.avi")]
+        filters = [("Video files", "*.avi", "*.mp4", "*.wmv")]
         # Open folder selector window - send selection to self.selected
         filechooser.open_file(
             on_selection=self.vid_selected, 
