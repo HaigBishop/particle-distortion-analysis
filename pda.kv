@@ -483,7 +483,9 @@ WindowManager:
     video_widget: video_widget
     video_slider: video_slider
     frame_label: frame_label
-    ion_range_label: ion_range_label
+    frame_text_box: frame_text_box
+    ion_range_start_text_box: ion_range_start_text_box
+    ion_range_end_text_box: ion_range_end_text_box
     ion_view: ion_view
     thumbnail_bar: thumbnail_bar
     GridLayout:
@@ -673,31 +675,99 @@ WindowManager:
                             on_press: root.remove_here()
                         FloatLayout:
                             size_hint:(1,1)
-                            Label:
-                                id: frame_label
-                                color: WHITE
+                            # Frame counter row
+                            GridLayout:
+                                cols: 3
                                 size_hint: (1, None)
                                 height: 40
                                 y: 40 if root.use_ion else 10
-                                padding: [20, 0, 0, 0]
-                                halign: 'left'
-                                font_name: 'resources\\Inter.ttf'
-                                text_size: self.size
-                                shorten: True
-                                font_size: 20
-                            Label:
-                                id: ion_range_label
-                                color: WHITE
+                                Label:
+                                    text: 'Frame:'
+                                    color: WHITE
+                                    size_hint: (None, 1)
+                                    width: 75
+                                    padding: [10, 0, 0, 0]
+                                    halign: 'left'
+                                    valign: 'center'
+                                    font_name: 'resources\\Inter.ttf'
+                                    text_size: self.size
+                                    shorten: True
+                                    font_size: 18
+                                TextInput
+                                    id: frame_text_box
+                                    size_hint: (None, 0.8)
+                                    width: 75
+                                    multiline: False
+                                    text_align: 'justify'
+                                    padding_y: 7
+                                    font_size: 18
+                                    on_text: root.on_frame_text(self.text)
+                                    on_text_validate: root.on_frame_text(self.text)
+                                    on_focus: root.is_typing = self.focus
+                                Label:
+                                    id: frame_label
+                                    color: WHITE
+                                    size_hint: (None, 1)
+                                    width: 115
+                                    padding: [10, 0, 0, 0]
+                                    halign: 'left'
+                                    valign: 'center'
+                                    font_name: 'resources\\Inter.ttf'
+                                    text_size: self.size
+                                    shorten: True
+                                    font_size: 18
+                            # Ion range row
+                            GridLayout:
+                                cols: 4
                                 size_hint: (1, None)
                                 height: 40
                                 y: 0
-                                padding: [20, 0, 0, 10]
-                                halign: 'left'
-                                font_name: 'resources\\Inter.ttf'
-                                text_size: self.size
-                                shorten: True
-                                font_size: 20
-
+                                Label:
+                                    text: 'Ion range:'
+                                    color: WHITE
+                                    size_hint: (None, 1)
+                                    width: 105
+                                    padding: [10, 0, 0, 0]
+                                    halign: 'left'
+                                    valign: 'center'
+                                    font_name: 'resources\\Inter.ttf'
+                                    text_size: self.size
+                                    shorten: True
+                                    font_size: 18
+                                TextInput
+                                    id: ion_range_start_text_box
+                                    size_hint: (None, 0.8)
+                                    width: 50
+                                    multiline: False
+                                    text_align: 'justify'
+                                    padding_y: 7
+                                    font_size: 18
+                                    on_text: root.on_ion_range_text(self.text, 'start')
+                                    on_text_validate: root.on_ion_range_text(self.text, 'start')
+                                    on_focus: root.is_typing = self.focus
+                                Label:
+                                    text: '/'
+                                    color: WHITE
+                                    size_hint: (None, 1)
+                                    width: 25
+                                    padding: [0, 0, 0, 0]
+                                    halign: 'center'
+                                    valign: 'center'
+                                    font_name: 'resources\\Inter.ttf'
+                                    text_size: self.size
+                                    shorten: True
+                                    font_size: 18
+                                TextInput
+                                    id: ion_range_end_text_box
+                                    size_hint: (None, 0.8)
+                                    width: 75
+                                    multiline: False
+                                    text_align: 'justify'
+                                    padding_y: 7
+                                    font_size: 18
+                                    on_text: root.on_ion_range_text(self.text, 'end')
+                                    on_text_validate: root.on_ion_range_text(self.text, 'end')
+                                    on_focus: root.is_typing = self.focus
                     FloatLayout:
                         size_hint:(None,1)
                         width: 12

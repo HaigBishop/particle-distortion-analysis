@@ -15,6 +15,7 @@ from kivy.uix.boxlayout import BoxLayout
 import cv2
 import numpy as np
 from math import exp
+import re
 
 # Import local modules
 from popup_elements import BackPopup
@@ -41,10 +42,11 @@ class IE3Window(Screen):
     ready_for_start = BooleanProperty(True)
     # Will always display the original signal if True
     always_use_OG_sig = BooleanProperty(False) 
-
     # Floats which define the zoom for the current experiment
     zoom_start = NumericProperty(0.0)
     zoom_end = NumericProperty(1.0)
+    # True when focus is in the text box
+    is_typing = BooleanProperty(False)
 
 
     def __init__(self, **kwargs):
@@ -81,18 +83,21 @@ class IE3Window(Screen):
             self.update_slider_on_event()
             self.update_video()
             # Update frame label
-            self.frame_label.text = 'Frame: ' + str(current.current_frame) + '/' + str(current.num_frames)
+            self.frame_label.text = '/ ' + str(current.num_frames)
+            self.frame_text_box.text = str(current.current_frame)
             # Update with current experiment's values
             self.location_label.text = str(current.vid_loc)
             # Update ion current file select section
             if self.use_ion and current.ion_loc != '':
                 self.ion_location_label.text = str(current.ion_loc)
                 self.ion_view.update_view()
-                self.ion_range_label.text = 'Ion range: ' + str(current.ion_frame_range[0]) + ' to ' + str(current.ion_frame_range[1])
+                self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
+                self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
             else:
                 self.ion_location_label.text = 'No file selected'
                 self.ion_view.update_view()
-                self.ion_range_label.text = ''
+                self.ion_range_start_text_box.text = ''
+                self.ion_range_end_text_box.text = ''
                 self.ion_adjust_btn.state = 'normal'
             # Update the thumbnail cursor
             self.thumbnail_bar.update_cursor()
@@ -105,7 +110,9 @@ class IE3Window(Screen):
             self.ion_location_label.text = 'No file selected'
             # Update frame labels
             self.frame_label.text = ''
-            self.ion_range_label.text = ''
+            self.frame_text_box.text = ''
+            self.ion_range_start_text_box.text = ''
+            self.ion_range_end_text_box.text = ''
             self.ion_view.texture = None
             # Update the thumbnail cursor
             self.thumbnail_bar.cursor_x = -9999
@@ -409,12 +416,51 @@ class IE3Window(Screen):
                         break
         # Update everything visually
         self.update_fields()
+    
+    def on_ion_range_text(self, text, start_or_stop):
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # If the text is a number
+            if re.match(r'^[-]?\d+$', text):
+                # Get the old values
+                old_start, old_stop = current.ion_frame_range
+                # Get the new values
+                new_ion_start = int(text) if start_or_stop == 'start' else old_start
+                new_ion_end = int(text) if start_or_stop == 'end' else old_stop
+                # If new values are valid
+                min_num_frames = min(100, current.num_frames)
+                if new_ion_end > new_ion_start + min_num_frames:
+                    # Set new values
+                    current.ion_frame_range = (new_ion_start, new_ion_end)
+                    # Update everything visually
+                    self.update_fields()
+                else:
+                    # Keep old values and update text boxes
+                    self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
+                    self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
+            else:
+                # Keep old values and update text boxes
+                self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
+                self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
+    
+    def on_frame_text(self, text):
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # If the text is a valid number
+            if re.match(r'^[-]?\d+$', text) and int(text) >= 1 and int(text) <= current.num_frames:
+                # Set new frame
+                self.set_cursor_on_frame(int(text))
+            else:
+                # Set old frame
+                self.set_cursor_on_frame(current.current_frame)
 
     def on_key_up(self, key):
         """called when a key is released up
         - there are many results depending on the key"""
-        # If there is a current experiment
-        if self.app.current_experiment is not None:
+        # If there is a current experiment and are not typing
+        if self.app.current_experiment is not None and not self.is_typing:
             # If the 's' key is released
             if key == "s":
                 # Add Stop or start depending which is next
