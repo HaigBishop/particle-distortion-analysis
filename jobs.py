@@ -7,7 +7,7 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Kivy imports
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
-from kivy.properties import BooleanProperty, NumericProperty
+from kivy.properties import BooleanProperty
 from kivy.app import App
 
 # Import modules
@@ -33,6 +33,7 @@ class Experiment():
     def __init__(self, vid_loc):
         # General
         self.name, self.file_extension = os.path.splitext(os.path.basename(vid_loc))
+        self.directory, _ = os.path.split(vid_loc)
         # Video file
         self.vid_loc = vid_loc
         self.current_frame = 1
@@ -110,6 +111,8 @@ class Experiment():
         return frame
 
 
+
+
 class ExperimentBox(Button):
     """experiment widget on the ExperimentList scrollview widget"""
     is_selected = BooleanProperty(False)
@@ -135,12 +138,8 @@ class ExperimentBox(Button):
     def on_open_btn(self):
         """Called by button on experiment box
         Opens the file/folder associated with the experiment"""
-        # Find last slash
-        s = str(self.experiment.vid_loc).rfind("\\") + 1
-        # E.g. 'C:\Desktop\folder\'
-        path = str(self.experiment.vid_loc)[:s]
         # Open that folder in the explorer
-        p_open('explorer "' + str(path) + '"')
+        p_open('explorer "' + str(self.experiment.directory) + '"')
 
 
 class ExperimentList(ScrollView):
@@ -235,7 +234,6 @@ class EventBox(Button):
         super().__init__(**kwargs)
         
 
-
 class EventList(ScrollView):
     """scrolling widget which holds events"""
 
@@ -245,4 +243,3 @@ class EventList(ScrollView):
         self.app = App.get_running_app()
         # Call ScrollView init method
         super(EventList, self).__init__(**kwargs)
-        

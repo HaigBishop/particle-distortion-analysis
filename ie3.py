@@ -20,7 +20,7 @@ import re
 # Import local modules
 from popup_elements import BackPopup
 from jobs import ExperimentBox
-from file_management import kivify_image, split_min_max, downsample_image, align_sig_to_frames
+from file_management import kivify_image, split_min_max, downsample_image, align_sig_to_frames, write_experiment_events_json
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -48,7 +48,6 @@ class IE3Window(Screen):
     # True when focus is in the text box
     is_typing = BooleanProperty(False)
 
-
     def __init__(self, **kwargs):
         """init method for IE3 screen"""
         # Call ScrollView init method
@@ -58,7 +57,17 @@ class IE3Window(Screen):
 
     def on_proceed(self):
         """called by pressing the 'Proceed' button."""
-        pass
+        # If exporting as a JSON file
+        if self.export_checkbox.active:
+            # For experiment box in list
+            for exp_box in self.exp_scroll.grid_layout.children:
+                # Get the experiment object
+                experiment = exp_box.experiment
+                # Export this data to a json file
+                success = write_experiment_events_json(experiment, self.use_ion, overwrite_ok=self.overwrite_checkbox.active)
+                # If failed
+                if not success:
+                    print('Failed to write this JSON file. Check if a file with that name already exists')
 
     def load_experiments(self):
         """Called by previous screen when migrating experiments over.

@@ -12,6 +12,7 @@ from datetime import datetime
 import cv2
 import os
 import numpy as np
+import json
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
 from moviepy.editor import VideoFileClip
@@ -375,3 +376,93 @@ def align_sig_to_frames(signal, num_frames, frame_range):
     # Add buffers to the signal
     new_signal = np.concatenate((start_buffer, chopped_signal, stop_buffer))
     return new_signal
+
+def is_valid_json_path(file_path, overwrite_ok=False):
+    """Check if the file path is valid for writing a JSON file."""
+    # Get the directory
+    directory = os.path.dirname(file_path)
+    # Check if the directory exists
+    if not os.path.exists(directory):
+        print(f"Error: Directory {directory} does not exist.")
+        return False
+    # Check if the directory is writable
+    elif not os.access(directory, os.W_OK):
+        print(f"Error: No write permissions in directory {directory}.")
+        return False
+    # Check if the file exists already
+    elif not overwrite_ok and os.path.exists(file_path):
+        print(f"Error: File {file_path} already exists.")
+        return False
+    # We good
+    else:
+        return True
+
+def write_experiment_events_json(experiment, use_ion=True, overwrite_ok=False):
+    """Given an Experiment object, writes a json file to describe it.
+    Includes only the paths of the files for the video and ion current data.
+    But, it does include events and their ion current data."""
+    # Make a list to hold all events
+    event_dictionaries = []
+    # If we have any events selected
+    if len(experiment.event_ranges) > 0:
+        # Align/zoom signal to the video frames
+        aligned_signal = align_sig_to_frames(experiment.ioncurr_sig, experiment.num_frames, experiment.ion_frame_range)
+        # For every event
+        i = 1
+        for first_frame, last_frame in experiment.event_ranges:
+            # If using ion
+            if use_ion:
+                # Grab ion current data between first_frame and last_frame
+                start_i = int(((first_frame - 1) / experiment.num_frames) * len(aligned_signal))
+                end_i = int(((last_frame) / experiment.num_frames) * len(aligned_signal) + 1)
+                ion_data = aligned_signal[start_i : end_i]
+                # As a python list with Nones not NaNs
+                ion_data = [None if np.isnan(x) else x for x in ion_data.tolist()]
+            # If not using ion
+            else:
+                ion_data = None
+            # Construct a dictionary
+            event_dict = {
+                'id' : i,
+                'startFrame' : first_frame, 
+                'endFrame' : last_frame, 
+                'numFrames' : last_frame - first_frame + 1,
+                'ionCurrentData' : ion_data
+            }
+            # Add to the list
+            event_dictionaries.append(event_dict)
+            # next ID
+            i += 1
+    # Construct dictionary
+    data_dict = {
+        'timestamp' : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'name' : experiment.name,
+        'videoFileDirectory' : experiment.directory,
+        'videoFileExtension': experiment.file_extension,
+        'videoHeight' : experiment.shape[0], 
+        'videoWidth' : experiment.shape[1],
+        'numFrames' : experiment.num_frames,
+        'videoDate' : experiment.vid_date,
+        'ionCurrentFile' : experiment.ion_loc if use_ion else None,
+        'ionDate' : experiment.ion_date if use_ion else None,
+        'ionDataLength' : experiment.ioncurr_len if use_ion else None,
+        'ionSampleFrequency' : experiment.sample_freq if use_ion else None,
+        'ionTimeStep' : experiment.t_step if use_ion else None,
+        'ionLoopFactor' : experiment.loop_factor if use_ion else None,
+        'ionFrameRange' : experiment.ion_frame_range if use_ion else None,
+        'numEvents' : len(event_dictionaries),
+        'events' : event_dictionaries,
+    }
+    # Make a file path (where video file is)
+    file_path = experiment.directory + '\\' + experiment.name + '.json'
+    # If this path is okay
+    if is_valid_json_path(file_path, overwrite_ok=overwrite_ok):
+        # Write file
+        with open(file_path, 'w') as json_file:
+            json.dump(data_dict, json_file, indent=2)
+        # Nice!
+        success = True
+    else:
+        # Damn!
+        success = False
+    return success
