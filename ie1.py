@@ -22,7 +22,8 @@ from file_management import is_ion_file, is_video_file, kivify_image, get_frame
 
 class IE1Window(Screen):
     """position -> force screen"""
-    ion_files_attached = BooleanProperty(False)
+    # True when at least one ion file is attached
+    ion_file_attached = BooleanProperty(False)
     is_loading = BooleanProperty(False)
 
     def __init__(self, **kwargs):
@@ -125,11 +126,13 @@ class IE1Window(Screen):
         ion_loc_list = []
         # Loop all experiments
         for exp in self.app.experiments:
-            # Check number of samples
-            if exp.ioncurr_len < 3 or exp.strobe_len < 3:
-                errors.append("invalid number of ion current samples (" + str(exp.name) + ")\n")
-            # Add this job's ion file loc to list (to check for duplicates)
-            ion_loc_list.append(exp.ion_loc)
+            # If this one has an ion data attached
+            if exp.ion_loc != '':
+                # Check number of samples
+                if exp.ioncurr_len < 3 or exp.strobe_len < 3:
+                    errors.append("invalid number of ion current samples (" + str(exp.name) + ")\n")
+                # Add this job's ion file loc to list (to check for duplicates)
+                ion_loc_list.append(exp.ion_loc)
         # Check for duplicate files
         if len(ion_loc_list) != len(set(ion_loc_list)):
             # Duplicate files
@@ -256,7 +259,7 @@ class IE1Window(Screen):
             else:
                 invalid_type = True
         # Update ion attached boolean
-        self.update_ion_files_attached()
+        self.update_ion_file_attached()
         # Update everything visually
         self.update_fields()
         # If there was a failed selection
@@ -278,13 +281,12 @@ class IE1Window(Screen):
         """Called when the 'x' button next two the ion current file selection is pressed."""
         self.app.current_experiment.remove_ion_file()
         # Update ion attached boolean
-        self.update_ion_files_attached()
+        self.update_ion_file_attached()
         # Update everything visually
         self.update_fields()
     
-    def update_ion_files_attached(self):
-        any_exps = len(self.app.experiments) != 0
-        self.ion_files_attached = any_exps and all([exp.ion_loc != '' for exp in self.app.experiments])
+    def update_ion_file_attached(self):
+        self.ion_file_attached = any([exp.ion_loc != '' for exp in self.app.experiments])
 
     def on_current_experiment(self, instance, current_experiment):
         """Called."""
@@ -349,7 +351,7 @@ class IE1Window(Screen):
 
     def on_experiments(self, instance, experiments):
         # Update ion attached boolean
-        self.update_ion_files_attached()
+        self.update_ion_file_attached()
 
     def _on_file_drop(self, file_path):
         """called when a file is dropped on this screen

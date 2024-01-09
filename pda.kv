@@ -56,11 +56,6 @@ WindowManager:
                 id: spacer_bar
                 size_hint_x: None
                 width: '20dp'
-                CheckBox:
-                    active: True
-                    size: 50, 50
-                    pos: 0,0
-                    color: TANGY_GREEN_TINT
             # Title / subtitle split
             GridLayout:
                 rows: 2
@@ -443,7 +438,7 @@ WindowManager:
                 size_hint:(None,None)
                 size: (right_grid.width - dp(4), dp(4))
             TangyButton:
-                disabled:  len(root.exp_scroll.grid_layout.children) == 0 or not root.ion_files_attached
+                disabled:  len(root.exp_scroll.grid_layout.children) == 0 or not root.ion_file_attached
                 disabled_color: DARK_GREY
                 text: 'Proceed With Current Data'
                 size_hint:(None,None)
@@ -553,7 +548,7 @@ WindowManager:
                     size_hint_y: 0.1
                     ToggleBlankButton:
                         id: ion_adjust_btn
-                        disabled: not root.use_ion
+                        disabled: not (root.use_ion and root.app.current_has_ion)
                         text:'⇔'
                         font_name: 'resources\\Inter.ttf'
                         font_size: '15dp'
@@ -618,27 +613,34 @@ WindowManager:
                     cols: 3
                     FloatLayout:
                         size_hint: None, 1
-                        width: '18dp'
+                        width: '52dp'
                     # Ion current view
                     IonCurrentView:
                         id: ion_view
                         ie3_window: ie3_window
                         video_slider: video_slider
                         size_hint: None, 1
-                        width: image_row.width - dp(36)
+                        width: max(image_row.width - dp(70), 5)
                     FloatLayout:
                         size_hint: None, 1
                         width: '18dp'
-                # Slider
-                Slider:
-                    id: video_slider
-                    min: 0
-                    max: 1
-                    size_hint: 1, 0.1
-                    cursor_image: 'resources\\white_circle.png'
-                    cursor_disabled_image: 'resources\\white_circle.png'
-                    cursor_size: '24dp', '24dp'
-                    on_value: root.on_slider()
+                GridLayout:
+                    size_hint_y: 0.1
+                    cols: 2
+                    FloatLayout:
+                        size_hint: None, 1
+                        width: '36dp'
+                    # Slider
+                    Slider:
+                        id: video_slider
+                        min: 0
+                        max: 1
+                        size_hint: None, 1
+                        width: ion_view.width + dp(32)
+                        cursor_image: 'resources\\white_circle.png'
+                        cursor_disabled_image: 'resources\\white_circle.png'
+                        cursor_size: '24dp', '24dp'
+                        on_value: root.on_slider()
                 # Side buttons and video view
                 GridLayout:
                     cols: 4
@@ -691,7 +693,7 @@ WindowManager:
                                 size_hint: (1, None)
                                 height: '27dp'
                                 x: 0
-                                y: '27dp' if root.use_ion else 0
+                                y: '27dp' if root.use_ion and root.app.current_has_ion else 0
                                 Label:
                                     text: 'Frame:'
                                     color: WHITE
@@ -710,7 +712,6 @@ WindowManager:
                                     width: '50dp'
                                     multiline: False
                                     text_align: 'justify'
-                                    padding_y: '5dp'
                                     font_size: '12dp'
                                     on_text: root.on_frame_text(self.text)
                                     on_text_validate: root.on_frame_text(self.text)
@@ -732,7 +733,7 @@ WindowManager:
                                 cols: 4
                                 size_hint: (1, None)
                                 height: '27dp'
-                                x: 0 if root.use_ion else 69420
+                                x: 0 if root.use_ion and root.app.current_has_ion else 69420
                                 y: 0
                                 Label:
                                     text: 'Ion range:'
@@ -752,7 +753,6 @@ WindowManager:
                                     width: '33dp'
                                     multiline: False
                                     text_align: 'justify'
-                                    padding_y: '5dp'
                                     font_size: '12dp'
                                     on_text: root.on_ion_range_text(self.text, 'start')
                                     on_text_validate: root.on_ion_range_text(self.text, 'start')
@@ -775,7 +775,6 @@ WindowManager:
                                     width: '50dp'
                                     multiline: False
                                     text_align: 'justify'
-                                    padding_y: '5dp'
                                     font_size: '12dp'
                                     on_text: root.on_ion_range_text(self.text, 'end')
                                     on_text_validate: root.on_ion_range_text(self.text, 'end')
@@ -1284,7 +1283,7 @@ WindowManager:
         pos: (root.x + root.width - dp(32), root.y + root.height - dp(19))
         on_press: root.on_open_btn()
         Image:
-            source: 'resources\\open_btn0.png'
+            source: 'resources\\open_btn.png'
             y: self.parent.y + dp(3)
             x: self.parent.x
             size: ('13dp', '13dp')
@@ -1391,11 +1390,17 @@ WindowManager:
 
 
 <IonCurrentView>:
+    y_axis_layout: y_axis_layout
     size_hint: 1, 1
     color: WHITE if self.texture is None else WHITE
     on_touch_down: root._on_touch_down(args[1])
     on_touch_move: root._on_touch_down(args[1])
-
+    FloatLayout:
+        id: y_axis_layout
+        y: root.y
+        x: 0 if root.app.current_experiment != None and root.app.current_has_ion else 69420
+        width: root.x
+        height: root.height
 
 
 

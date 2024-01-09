@@ -16,6 +16,39 @@ import json
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
 from moviepy.editor import VideoFileClip
+import math
+
+def select_increment(value_range, num_labels):
+    """num_labels must be > 1"""
+    # Calculate the step size between labels
+    step_size = value_range / (num_labels - 1)
+    # Determine using math!
+    increment = 10 ** (round(math.log10(step_size / 5)))
+    return increment
+
+def round_to_increment(value, increment):
+    rounded_value = round(value / increment) * increment + 0
+    # Round again to remove trailing decimal point values e.g. 0.02300000005
+    return round(rounded_value, 12)
+
+def generate_y_axis_labels(min_value, max_value, num_labels):
+    # Calculate the step size between labels
+    step_size = (max_value - min_value) / (num_labels - 1) if num_labels > 1 else 0
+    # Choose a "nice" increment for rounding (e.g., 1, 5, 10, etc.)
+    nice_increment = select_increment((max_value - min_value), num_labels)
+    rounded_min = round_to_increment(min_value, nice_increment)
+    # Generate the labels using a list comprehension
+    labels = [round_to_increment(rounded_min + i * step_size, nice_increment) for i in range(num_labels)]
+    # Ensure the first and last are not out of range
+    if labels[0] < min_value:
+        new_val = round_to_increment(min_value, nice_increment / 10)
+        labels[0] = new_val if new_val > labels[0] else labels[0]
+    if labels[-1] > max_value:
+        new_val = round_to_increment(max_value, nice_increment / 10)
+        labels[-1] = new_val if new_val < labels[-1] else labels[-1]
+    # Convert to strings plus strip trailing zeroes if present (e.g. 17.0 -> 17)
+    labels = [str(label).rstrip('0').rstrip('.') if '.' in str(label) else str(label) for label in labels]
+    return labels
 
 def count_frames(video_loc):
     """Accurately finds the number of frames in the video.

@@ -1,14 +1,13 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.17)
+Program: Particle Deformation Analysis (Version 0.1.18)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 05/01/2024
+Date: 09/01/2024
 Version Description:
-- allows export of events as JSON (by pressing proceed on IE3)
-- tick boxes for options for these ^
-- shows job count
-- GUI element sizes automatically adjust to screen density
+- selects the first job on a new screen
+- allow for mix of with/without ion data on IE3
+- shows y-axis on ion current view IE3
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -139,6 +138,8 @@ class PDAApp(App):
     # This holds the current event/experiment
     current_experiment = ObjectProperty(None, allownone=True)
     current_event = ObjectProperty(None, allownone=True)
+    # True when the current experiment has ion data attached
+    current_has_ion = BooleanProperty(False)
     # True when shift key is down
     shift_is_down = BooleanProperty(False)
 
@@ -175,6 +176,9 @@ class PDAApp(App):
     def on_current_experiment(self, instance, current_experiment):
         """Called when the current experiment changes.
         Calls on_current_experiment if the current screen has this method."""
+        # Update current_has_ion
+        self.current_has_ion = current_experiment is not None and current_experiment.ion_loc != ''
+        # Get the current screen
         current_screen = self.root.current
         # If on a screen with an experiments list
         if current_screen in ["IE1", "IE3"]:

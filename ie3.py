@@ -9,7 +9,9 @@ from kivy.app import App
 from kivy.uix.screenmanager import Screen
 from kivy.properties import BooleanProperty, NumericProperty
 from kivy.uix.image import Image
+from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.metrics import dp
 
 # Import modules
 import cv2
@@ -20,7 +22,7 @@ import re
 # Import local modules
 from popup_elements import BackPopup
 from jobs import ExperimentBox
-from file_management import kivify_image, split_min_max, downsample_image, align_sig_to_frames, write_experiment_events_json
+from file_management import *
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -30,6 +32,7 @@ ION_EVENT_COLOUR = (238, 238, 238)
 ION_EVENT_EDGE_COLOUR = (82, 82, 82)
 ION_EVENT_START_COLOUR = (242, 144, 39)
 ION_CURSOR_COLOUR = (0, 0, 255)
+WHITE = (1, 1, 1, 1)
 
 
 class IE3Window(Screen):
@@ -63,8 +66,10 @@ class IE3Window(Screen):
             for exp_box in self.exp_scroll.grid_layout.children:
                 # Get the experiment object
                 experiment = exp_box.experiment
+                # Is there ion data to write?
+                write_ion = self.use_ion and self.app.current_has_ion
                 # Export this data to a json file
-                success = write_experiment_events_json(experiment, self.use_ion, overwrite_ok=self.overwrite_checkbox.active)
+                success = write_experiment_events_json(experiment, write_ion, overwrite_ok=self.overwrite_checkbox.active)
                 # If failed
                 if not success:
                     print('Failed to write this JSON file. Check if a file with that name already exists')
@@ -76,9 +81,9 @@ class IE3Window(Screen):
             # Create the accompanying list box
             new_exp_box = ExperimentBox(experiment, self)
             self.exp_scroll.grid_layout.add_widget(new_exp_box)
-        # Set the last experiment added as the current job
+        # Set the first experiment added as the current job
         self.app.deselect_all_experiments()
-        self.app.select_experiment(experiment)
+        self.app.select_experiment(self.app.experiments[0])
         # Update everything visually
         self.update_fields()
 
@@ -97,7 +102,7 @@ class IE3Window(Screen):
             # Update with current experiment's values
             self.location_label.text = str(current.vid_loc)
             # Update ion current file select section
-            if self.use_ion and current.ion_loc != '':
+            if self.use_ion and self.app.current_has_ion:
                 self.ion_location_label.text = str(current.ion_loc)
                 self.ion_view.update_view()
                 self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
@@ -309,7 +314,7 @@ class IE3Window(Screen):
         current_frame_in_range = start_frame <= frame <= end_frame
         if current_frame_in_range:
             # Calculate the proper position
-            frame_range = end_frame - start_frame
+            frame_range = end_frame - start_frame if end_frame > start_frame else 1
             new_value = (frame - start_frame) / frame_range
         # If the current frame is out of view leftwards
         elif frame <= start_frame:
@@ -427,9 +432,9 @@ class IE3Window(Screen):
         self.update_fields()
     
     def on_ion_range_text(self, text, start_or_stop):
-        # If there is a current experiment
+        # If there is a current experiment and there is ion data
         current = self.app.current_experiment
-        if current is not None:
+        if current is not None and self.use_ion and self.app.current_has_ion:
             # If the text is a number
             if re.match(r'^[-]?\d+$', text):
                 # Get the old values
@@ -653,6 +658,8 @@ class IonCurrentView(Image):
         super(IonCurrentView, self).__init__(**kwargs)
         # Save app as an attribute
         self.app = App.get_running_app()
+        # Save the previous min max of the signal and the number of labels
+        self.prev_sig_min_max_num = (None, None, None)
 
     def set_frame(self, pos):
         """Changes slider position based on click position on window."""
@@ -777,7 +784,7 @@ class IonCurrentView(Image):
                     cv2.line(image, (start_x1, 0), (start_x1, height), ION_EVENT_EDGE_COLOUR, 1)
                     cv2.line(image, (stop_x2, 0), (stop_x2, height), ION_EVENT_EDGE_COLOUR, 1)
             # If using the ion current, draw it
-            if self.ie3_window.use_ion:
+            if self.ie3_window.use_ion and self.app.current_has_ion:
                 # Decide to use down sampled signal or not
                 downsample_too_small = len(current.downsampled_ioncurr_sig) * (self.ie3_window.zoom_end - self.ie3_window.zoom_start) < 25000
                 use_OG = self.ie3_window.always_use_OG_sig or downsample_too_small
@@ -798,22 +805,68 @@ class IonCurrentView(Image):
                         # include the next one
                         end_sample_i += 1
                 signal = signal[start_sample_i:end_sample_i]
-                # Normalize the signal values to fit within the height of the image
-                gap_x, gap_y = 1, 3 # this gives some breathing room
-                # (use downsampled data)
-                sig_min, sig_max = np.nanmin(signal), np.nanmax(signal)
-                if sig_min == sig_max:
-                    sig_min, sig_max = 0, 1
-                normalized_signal = (signal - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
-                # Get values to draw (min/max values for every x value)
-                min_array, max_array = split_min_max(normalized_signal, width - gap_x * 2)
-                # For each pixel on the x-axis corresponding to a window of signal
-                for x in range(width - gap_x * 2):
-                    # Get the range of values here
-                    min_sig, max_sig = min_array[x], max_array[x]
-                    if not np.isnan(min_sig) and not np.isnan(max_sig):
-                        # Draw a verticle line on that x value
-                        cv2.line(image, (x + gap_x, int(min_sig)), (x + gap_x, int(max_sig)), ION_SIG_COLOUR, 1)
+                # If not all values are NaN
+                if not np.isnan(signal).all():
+                    # Normalize the signal values to fit within the height of the image
+                    gap_x, gap_y = 1, 3 # this gives some breathing room
+                    # (use downsampled data)
+                    sig_min, sig_max = np.nanmin(signal), np.nanmax(signal)
+                    if sig_min == sig_max:
+                        sig_min, sig_max = 0, 1
+                    normalized_signal = (signal - sig_min) / (sig_max - sig_min) * (height - gap_y * 2) + gap_y
+                    # Get values to draw (min/max values for every x value)
+                    min_array, max_array = split_min_max(normalized_signal, width - gap_x * 2)
+                    # For each pixel on the x-axis corresponding to a window of signal
+                    for x in range(width - gap_x * 2):
+                        # Get the range of values here
+                        min_sig, max_sig = min_array[x], max_array[x]
+                        if not np.isnan(min_sig) and not np.isnan(max_sig):
+                            # Draw a verticle line on that x value
+                            cv2.line(image, (x + gap_x, int(min_sig)), (x + gap_x, int(max_sig)), ION_SIG_COLOUR, 1)
+                    # How many labels do we want?
+                    num_labels = int(height / dp(25) + 1.0)
+                    num_labels = 2 if num_labels < 2 else num_labels
+                    # Are these values new?
+                    new_labels_needed = (sig_min, sig_max, num_labels) != self.prev_sig_min_max_num
+                    # If so, we will need to remove the old ones
+                    if new_labels_needed:
+                        # Clear old y-axis labels
+                        self.y_axis_layout.clear_widgets()
+                    # Save the old values
+                    self.prev_sig_min_max_num = (sig_min, sig_max, num_labels)
+                    # Generate some new labels
+                    labels = generate_y_axis_labels(sig_min, sig_max, num_labels)
+                    print()
+                    print(labels)
+                    print(sig_min, sig_max)
+                    for label in labels:
+                        # Normalise number for cv2 image
+                        normalised_value = -1 * float((float(label) - sig_min) / (sig_max - sig_min) - 1) * (height - gap_y * 2) + gap_y
+                        print(normalised_value, height)
+                        # Draw a line at this y-value
+                        cv2.line(image, (0, int(normalised_value)), (int(dp(8)), int(normalised_value)), ION_EVENT_EDGE_COLOUR, 1)
+                        # If the y-axis range of the signal is different to before
+                        if new_labels_needed:
+                            # Generate new labels...
+                            # Normalise number for label pos
+                            normalised_value = float((float(label) - sig_min) / (sig_max - sig_min)) * (height - gap_y * 2) + gap_y
+                            # Trim to 5 characters if longer
+                            label = label[:5] if len(label) > 5 else label
+                            # Create new label
+                            label_obj = Label(text=label, font_size='10dp', font_name='resources\\Inter.ttf', 
+                                            pos_hint={'x': 0, 'center_y': int(normalised_value) / height}, 
+                                            color=WHITE, size_hint=(1,1), valign='center', halign='left')
+                            self.y_axis_layout.add_widget(label_obj)
+                else:
+                    # Clear old y-axis labels
+                    self.y_axis_layout.clear_widgets()
+                    # Save the old "values"
+                    self.prev_sig_min_max_num = (None, None, None)
+            else:
+                # Clear old y-axis labels
+                self.y_axis_layout.clear_widgets()
+                # Save the old "values"
+                self.prev_sig_min_max_num = (None, None, None)
             # Draw vertical red line at x position of slider
             x = int((width - 1) * self.video_slider.value_normalized)
             cv2.line(image, (x, 0), (x, height), ION_CURSOR_COLOUR, 1)
