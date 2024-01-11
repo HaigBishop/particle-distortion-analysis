@@ -52,8 +52,10 @@ class BackPopup(Popup):
                 to_screen.exp_scroll.update_is_selected()
             # If TD1 -> main
             elif self.from_screen == 'TD1' and self.to_screen == 'main':
-                # Clear all experiments and their boxes
-                app.clear_experiments(boxes_only=False)
+                # Clear all events and their boxes
+                app.clear_events(boxes_only=False)
+                # Also clear experiments now :)
+                app.clear_experiments(boxes_only=False, all_screens=True)
                 # Update the from screen
                 from_screen.update_fields()
                 # Change screen

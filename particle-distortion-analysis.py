@@ -1,13 +1,17 @@
 """
-Program: Particle Deformation Analysis (Version 0.1.18)
+Program: Particle Deformation Analysis (Version 0.2.0)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 09/01/2024
+Date: 11/01/2024
 Version Description:
-- selects the first job on a new screen
-- allow for mix of with/without ion data on IE3
-- shows y-axis on ion current view IE3
+- allow IE3 -> TD1
+- allow import of events on TD1 via JSON files
+
+Version 0.2.0 !
+- Reached a milestone here
+- Can fully import and handle video, ion current, and experiment files
+- However, the application is not a "complete product", so it is not v1.0 yet
 """
 
 # Stops debug messages - alsoprevents an error after .exe packaging
@@ -185,11 +189,19 @@ class PDAApp(App):
             # Call on_current_experiment for that exp list scrollview
             screen = self.root.get_screen(current_screen)
             screen.exp_scroll.on_current_experiment(instance, current_experiment)
-        # If on a IE3
-        if current_screen in ["IE1", "IE3"]:
-            # Call on_current_experiment for that exp list scrollview
-            screen = self.root.get_screen(current_screen)
             screen.on_current_experiment(instance, current_experiment)
+    
+    def on_current_event(self, instance, current_event):
+        """Called when the current event changes.
+        Calls on_current_event if the current screen has this method."""
+        # Get the current screen
+        current_screen = self.root.current
+        # If on a screen with an events list
+        if current_screen in ["TD1"]:
+            # Call on_current_event for that evt list scrollview
+            screen = self.root.get_screen(current_screen)
+            screen.evt_scroll.on_current_event(instance, current_event)
+            screen.on_current_event(instance, current_event)
     
     def remove_experiment(self, experiment):
         """Removes an experiment and deselects it if selected"""
@@ -200,16 +212,36 @@ class PDAApp(App):
         # Remove from list
         self.experiments.remove(experiment)
     
+    def remove_event(self, event):
+        """Removes an event and deselects it if selected"""
+        # If selected
+        if self.current_event == event:
+            # Deselect
+            self.current_event = None
+        # Remove from list
+        self.events.remove(event)
+    
     def add_experiment(self, experiment):
         """Adds an experiment"""
         self.experiments.append(experiment)
 
+    def add_event(self, event):
+        """Adds an event"""
+        self.events.append(event)
+
     def select_experiment(self, experiment):
-        """Selects and experiment"""
+        """Selects an experiment"""
         # If it is in the list
         if experiment in self.experiments:
             # Set as current
             self.current_experiment = experiment
+
+    def select_event(self, event):
+        """Selects an event"""
+        # If it is in the list
+        if event in self.events:
+            # Set as current
+            self.current_event = event
     
     def deselect_all_experiments(self):
         """Deselects all experiments"""
@@ -221,21 +253,44 @@ class PDAApp(App):
         # Deselect
         self.current_event = None
 
-    def duplicate_experiment(self, vid_loc):
+    def duplicate_experiment_vid(self, vid_loc):
         """Returns True if the given video file is in the experiment list."""
         return vid_loc in [exp.vid_loc for exp in self.experiments]
+
+    def duplicate_experiment_obj(self, experiment):
+        """Returns True if the given video file is in the event list."""
+        return experiment.vid_loc in [exp.vid_loc for exp in self.experiments]
     
-    def clear_experiments(self, boxes_only=False):
+    def clear_experiments(self, boxes_only=False, all_screens=False):
         """Clears all experiments and experiment boxes from the current screen."""
-        # If on a screen with an experiments list
         current_screen = self.root.current
-        if current_screen in ["IE1", "IE3"]:
+        if all_screens:
+            # Get all screen's exp_scrolls
+            ie1_exp_scroll = self.root.get_screen('IE1').exp_scroll
+            ie3_exp_scroll = self.root.get_screen('IE3').exp_scroll
+            # Clear the lists
+            ie1_exp_scroll.clear_list(boxes_only=boxes_only)
+            ie3_exp_scroll.clear_list(boxes_only=boxes_only)
+        # If on a screen with an experiments list
+        elif current_screen in ["IE1", "IE3"]:
             # Get that screen's exp_scroll
             exp_scroll = self.root.get_screen(current_screen).exp_scroll
-            # Clear both lists
+            # Clear the list(s)
             exp_scroll.clear_list(boxes_only=boxes_only)
         # Deselect experiments
         self.deselect_all_experiments()
+    
+    def clear_events(self, boxes_only=False):
+        """Clears all events and event boxes from the current screen."""
+        # If on a screen with an events list
+        current_screen = self.root.current
+        if current_screen in ["TD1"]:
+            # Get that screen's evt_scroll
+            evt_scroll = self.root.get_screen(current_screen).evt_scroll
+            # Clear both lists
+            evt_scroll.clear_list(boxes_only=boxes_only)
+        # Deselect events
+        self.deselect_all_events()
 
 
 # If this is the main python file

@@ -14,9 +14,10 @@ from kivy.app import App
 import os
 from subprocess import Popen as p_open
 from scipy.signal import decimate
+import numpy as np
 
 # Import local modules
-from file_management import *
+from file_management import read_vid, get_frame, count_frames, file_date, fft_and_filter, normalise_and_smooth_sig, align_sig_to_frames, read_tdms
 
 # Desired size to downsample signal data
 # raw data is not discarded, this is only used for display
@@ -59,8 +60,14 @@ class Experiment():
         self.event_start_frame = None
         self.event_ranges = []
 
+        # A list of the event objects (only used after leaving IE3)
+        self.events = []
+
         # Maximum zoom in zoom range
         self.zoom_max = 0.01
+
+        # A JSON file attached to this exp which describes it and its event
+        self.json_file_loc = None
     
     def add_ion_file(self, file_loc):
         """Reads a TDMS file and holds information in this object.
@@ -110,7 +117,45 @@ class Experiment():
             frame = np.ones(self.shape, dtype=np.uint8) * 255
         return frame
 
+    def add_event(self, event):
+        """Adds an event"""
+        self.events.append(event)
 
+    def clear_events(self):
+        """Clears all events"""
+        self.events = []
+    
+    def make_events(self, use_ion):
+        """Simply makes event objects for all events of this experiment usingthe self.event_ranges"""
+        # Make a list to hold all events
+        events = []
+        # If we have any events selected
+        if len(self.event_ranges) > 0:
+            # If using ion
+            if use_ion:
+                # Align/zoom signal to the video frames
+                aligned_signal = align_sig_to_frames(self.ioncurr_sig, self.num_frames, self.ion_frame_range)
+            # For every event
+            i = 1
+            for first_frame, last_frame in self.event_ranges:
+                # If using ion
+                if use_ion:
+                    # Grab ion current data between first_frame and last_frame
+                    start_i = int(((first_frame - 1) / self.num_frames) * len(aligned_signal))
+                    end_i = int(((last_frame) / self.num_frames) * len(aligned_signal) + 1)
+                    ion_data = aligned_signal[start_i : end_i]
+                    # As a python list with Nones not NaNs
+                    ion_data = [None if np.isnan(x) else x for x in ion_data.tolist()]
+                # If not using ion
+                else:
+                    ion_data = None
+                # Construct an event
+                event = Event(i, self, first_frame, last_frame, ion_data)
+                # Add to the list
+                events.append(event)
+                # next ID
+                i += 1
+        return events
 
 
 class ExperimentBox(Button):
@@ -204,20 +249,19 @@ class Event():
     There are many events that occur within one experiment.
     The mutable object holds information on the event relevant to its analysis."""
     
-    def __init__(self, vid_loc):
+    def __init__(self, id, experiment, first_frame_num, last_frame_num, ion_data):
         # General
-        self.name = ''
-        self.experiment = None
-        # Video file
-        self.vid_loc = ''
-        self.vid_dims = ()
-        self.vid_num_frames = 0
-        self.first_frame = ''
+        self.id = id
+        self.experiment = experiment
+        self.name = experiment.name + "_" + str(id)
+        # Video stuff
+        self.first_frame_num = first_frame_num
+        self.last_frame_num = last_frame_num
+        self.num_frames = last_frame_num - first_frame_num + 1
+        self.first_frame = get_frame(self.experiment.cap, first_frame_num)
+       
         # Ion current file
-        self.ioncur_loc = ''
-        self.ioncur_dims = ()
-        self.ioncur_num_frames = 0
-        self.first_frame = ''
+        self.ion_data = ion_data
 
 
 class EventBox(Button):
@@ -227,11 +271,27 @@ class EventBox(Button):
     def __init__(self, event, window, **kwargs):
         """init method for event boxes on a event list scrollview"""
         self.event = event
+        self.experiment = event.experiment
         self.window = window
         # Save app as an attribute
         self.app = App.get_running_app()
         # Call Button init method
         super().__init__(**kwargs)
+
+    def on_press(self):
+        """called when the event box is pressed
+        - sets this event to be current
+        - enables layouts
+        - updates visuals
+        - scrolls textboxes back to the start"""
+        # This is now the current event
+        self.app.select_event(self.event)
+
+    def on_open_btn(self):
+        """Called by button on event box
+        Opens the file/folder associated with the event"""
+        # Open that folder in the explorer
+        p_open('explorer "' + str(self.experiment.directory) + '"')
         
 
 class EventList(ScrollView):
@@ -243,3 +303,47 @@ class EventList(ScrollView):
         self.app = App.get_running_app()
         # Call ScrollView init method
         super(EventList, self).__init__(**kwargs)
+
+    def clear_list(self, boxes_only=False):
+        # While there are still boxs
+        while len(self.grid_layout.children) != 0:
+            # Get the first box
+            box = self.grid_layout.children[0]
+            # Remove the first box
+            self.grid_layout.remove_widget(box)
+        # If not only clearing boxes
+        if not boxes_only:
+            # clear experiment objects
+            self.app.events.clear()
+        # Update visual stuff
+        self.window.update_fields()
+
+    def on_current_event(self, instance, current_event):
+        self.update_is_selected()
+
+    def update_is_selected(self):
+        # For every box
+        for evt_box in self.grid_layout.children:
+            # If not selected
+            if evt_box.event != self.app.current_event:
+                evt_box.is_selected = False
+            # If selected
+            else:
+                evt_box.is_selected = True
+
+    def on_x_btn(self, box, screen_id):
+        """called when an x button on a box is pressed
+        - disables the layouts because there is nothing selected now
+        - removes the events
+        - updates visuals"""
+        # Remove that event
+        self.grid_layout.remove_widget(box)
+        # If on first screen after main
+        if screen_id in ["TD1"]:
+            # Remove the event
+            self.app.remove_event(box.event)
+        else:
+            # Just deselect the event
+            self.app.deselect_all_events()
+        # Update visual stuff
+        self.window.update_fields()

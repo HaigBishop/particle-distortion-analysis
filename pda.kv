@@ -992,7 +992,7 @@ WindowManager:
                         font_size: '12dp'
                         pos_hint: {'x':.095, 'y':.3}
                         text:'select event(s)'
-                        on_release: root.select_event_files()
+                        on_release: root.select_experiment_jsons()
                     Label:
                         id: location_label
                         color: WHITE
@@ -1061,7 +1061,7 @@ WindowManager:
                 font_size: '19dp'
                 height: '40dp'
                 valign: 'center'
-            ExperimentList:
+            EventList:
                 id: evt_scroll
                 window: td1_window
                 size_hint:(None,None)
@@ -1076,12 +1076,12 @@ WindowManager:
             TangyButton:
                 disabled:  len(root.evt_scroll.grid_layout.children) == 0
                 disabled_color: DARK_GREY
-                text: 'Track Deformation'
+                text: 'Predict Start Point'
                 size_hint:(None,None)
                 font_size: '13dp'
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-dp(4), '33dp')
-                on_release: root.on_track()
+                on_release: root.on_predict()
 
 
 

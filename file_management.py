@@ -250,9 +250,6 @@ def is_ion_file(file_loc):
         # Incorrect extension
         return False
 
-def is_event_file(file_loc):
-    return False
-
 def read_vid(video_loc):
     # Open the video file
     cap = cv2.VideoCapture(video_loc)
@@ -430,7 +427,7 @@ def is_valid_json_path(file_path, overwrite_ok=False):
     else:
         return True
 
-def write_experiment_events_json(experiment, use_ion=True, overwrite_ok=False):
+def write_experiment_json(experiment, use_ion=True, overwrite_ok=False):
     """Given an Experiment object, writes a json file to describe it.
     Includes only the paths of the files for the video and ion current data.
     But, it does include events and their ion current data."""
@@ -498,4 +495,104 @@ def write_experiment_events_json(experiment, use_ion=True, overwrite_ok=False):
     else:
         # Damn!
         success = False
-    return success
+    return success, file_path
+
+def load_experiment_json(json_file_loc):
+    """Load experiment data from a JSON file and return an Experiment object.
+    - Reads all data contained, only uses some
+    - Does not actually load the ion current data itself, but related info
+    - Only loads frame ranges for events, not events themselves"""
+    errors = []
+
+    # Read the file as a dict
+    with open(json_file_loc, 'r') as json_file:
+        data_dict = json.load(json_file)
+
+    # Get video file path
+    name = data_dict['name']
+    directory = data_dict['videoFileDirectory']
+    file_extension = data_dict['videoFileExtension']
+    vid_loc = os.path.join(directory, name + file_extension)
+
+    # Is this video file legit?
+    if is_video_file(vid_loc):
+        # Create Experiment object
+        from jobs import Experiment # This prevents a circular import
+        experiment = Experiment(vid_loc)
+
+        # Add ion file path to experiment object
+        ion_loc = data_dict['ionCurrentFile']
+
+        # If there is an ion file attached and it is legit
+        if ion_loc is not None:
+            # Is this ion file legit?
+            if is_ion_file(ion_loc):
+                # Load the ion current data
+                experiment.add_ion_file(ion_loc)
+                # Add the alignment of the current and the video file
+                experiment.ion_frame_range = data_dict['ionFrameRange']
+            else:
+                # The ion file could not be read
+                errors.append('ion_read_fail')
+        # Extract all other data from the loaded dictionary
+        timestamp = datetime.strptime(data_dict['timestamp'], "%Y-%m-%d %H:%M:%S")
+        shape = (data_dict['videoHeight'], data_dict['videoWidth'])
+        num_frames = data_dict['numFrames']
+        vid_date = data_dict['videoDate']
+        ion_date = data_dict['ionDate']
+        ioncurr_len = data_dict['ionDataLength']
+        sample_freq = data_dict['ionSampleFrequency']
+        t_step = data_dict['ionTimeStep']
+        loop_factor = data_dict['ionLoopFactor']
+        
+        # Load event ranges (if any)
+        event_dicts = data_dict['events']
+        for event_dict in event_dicts:
+                # Add the frame range to the experiment object
+                start_frame = event_dict['startFrame']
+                end_frame = event_dict['endFrame']
+                experiment.event_ranges.append((start_frame, end_frame))
+                # Load all other data
+                event_id = event_dict['id']
+                num_frames_event = event_dict['numFrames']
+                ion_current_data = event_dict['ionCurrentData']
+
+        # Add the JSON file to the experiment
+        experiment.json_file_loc = json_file_loc
+    else:
+        # The video file could not be read
+        experiment = None
+        errors.append('vid_read_fail')
+    return experiment, errors
+
+def is_experiment_json(file_loc):
+    """Check if the given JSON file follows the expected structure for experiment data."""
+    try:
+        # Try open JSON file 
+        with open(file_loc, 'r') as json_file:
+            data_dict = json.load(json_file)
+        # Check for required keys in the loaded dictionary
+        required_keys = ['timestamp', 'name', 'videoFileDirectory', 'videoFileExtension',
+                         'videoHeight', 'videoWidth', 'numFrames', 'videoDate',
+                         'ionCurrentFile', 'ionDate', 'ionDataLength',
+                         'ionSampleFrequency', 'ionTimeStep', 'ionLoopFactor',
+                         'ionFrameRange', 'numEvents', 'events']
+        for key in required_keys:
+            if key not in data_dict:
+                return False
+        # Check if the 'events' key contains a list of dictionaries
+        if not isinstance(data_dict['events'], list):
+            return False
+        for event_dict in data_dict['events']:
+            # Check for required keys in each event dictionary
+            required_event_keys = ['id', 'startFrame', 'endFrame', 'numFrames', 'ionCurrentData']
+            for key in required_event_keys:
+                if key not in event_dict:
+                    return False
+            # Check if 'ionCurrentData' is a list
+            if not isinstance(event_dict['ionCurrentData'], list):
+                return False
+        return True
+    # Error
+    except (json.JSONDecodeError, FileNotFoundError):
+        return False

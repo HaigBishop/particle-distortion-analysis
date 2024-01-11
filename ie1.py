@@ -195,7 +195,7 @@ class IE1Window(Screen):
             # If is is a genuine selection of valid type
             if is_video_file(file_loc):
                 # If it doesn't already exist
-                if not self.app.duplicate_experiment(file_loc):
+                if not self.app.duplicate_experiment_vid(file_loc):
                     # Create a experiment object
                     new_experiment = Experiment(file_loc)
                     # Add to the list

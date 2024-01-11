@@ -20,9 +20,9 @@ from math import exp
 import re
 
 # Import local modules
-from popup_elements import BackPopup
+from popup_elements import BackPopup, ErrorPopup
 from jobs import ExperimentBox
-from file_management import *
+from file_management import align_sig_to_frames, write_experiment_json, kivify_image, split_min_max, generate_y_axis_labels, downsample_image
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -60,19 +60,101 @@ class IE3Window(Screen):
 
     def on_proceed(self):
         """called by pressing the 'Proceed' button."""
-        # If exporting as a JSON file
-        if self.export_checkbox.active:
+        # Check if the data is valid
+        errors = self.check_exps() ################
+        # If there are issues with the data
+        if errors != []:
+            # Make pop up - alerts of invalid data
+            popup = ErrorPopup()
+            # Adjust the text on the popup
+            popup.error_label.text = "Invalid Data:\n" + "".join(errors)
+            popup.open()
+        # If no issues with the data
+        else:
+            # List of names of experiments which did not export properly
+            export_errors = []
             # For experiment box in list
             for exp_box in self.exp_scroll.grid_layout.children:
                 # Get the experiment object
                 experiment = exp_box.experiment
-                # Is there ion data to write?
-                write_ion = self.use_ion and self.app.current_has_ion
-                # Export this data to a json file
-                success = write_experiment_events_json(experiment, write_ion, overwrite_ok=self.overwrite_checkbox.active)
-                # If failed
-                if not success:
-                    print('Failed to write this JSON file. Check if a file with that name already exists')
+                # We using ion and have ion?
+                use_ion = self.use_ion and experiment.ion_loc != ''
+                # If exporting as a JSON file
+                if self.export_checkbox.active:
+                    # Try write a JSON file
+                    success, json_file_loc = write_experiment_json(experiment, use_ion, overwrite_ok=self.overwrite_checkbox.active)
+                    # Export failed
+                    if not success:
+                        # Add this experiment to be displayed to user
+                        export_errors.append(" • " + experiment.name + "\n")
+                        json_file_loc = None
+                # Not exporting
+                else:
+                    json_file_loc = None
+                # Add the JSON file (or None) to the experiment
+                experiment.json_file_loc = json_file_loc
+                # Make an event objects
+                events = experiment.make_events(use_ion) ###########
+                # For every event object
+                for event in events:
+                    # Add event to app list
+                    self.app.add_event(event)
+                    # Add event to experiment
+                    experiment.add_event(event)
+            # If there were issues exporting the data
+            if export_errors != []:
+                # Make pop up - alerts of issues data
+                popup = ErrorPopup()
+                # Adjust the text on the popup
+                popup.error_label.text = "Failed to write the JSON files for the following experiments:\n" + "".join(errors)
+                popup.title = "Issues exporting JSON file(s)"
+                popup.open()
+            # Clear all experiments boxes
+            self.app.clear_experiments(boxes_only=True, all_screens=True)
+            # Update IE1 and IE3
+            ie1_window = self.app.root.get_screen("IE1")
+            ie1_window.update_fields()
+            self.update_fields()
+            # Change screen to TD1
+            self.app.root.current = "TD1"
+            self.app.root.transition.direction = "up"
+            # Load events on new screen
+            td1_window = self.app.root.get_screen("TD1")
+            td1_window.load_events()
+
+    def check_exps(self):
+        """Checks that the data on this screen is suitable before proceeding to the next screen.
+        Let's check:
+        - """
+        errors = []
+        name_list = []
+        vid_loc_list = []
+        event_count = 0
+        # Loop all experiment boxes
+        for exp_box in self.exp_scroll.grid_layout.children:
+            exp = exp_box.experiment
+            # Check things if you're smart!
+            if 2 + 2 == 5:
+                errors.append("this is an error! (" + str(exp.name) + ")\n")
+            # Add this job's name and file loc to lists (to check for duplicates)
+            name_list.append(exp.name)
+            vid_loc_list.append(exp.vid_loc)
+            # Count number of events
+            event_count += len(exp.event_ranges)
+        # Check for duplicate files
+        if len(vid_loc_list) != len(set(vid_loc_list)):
+            # Duplicate files
+            errors.append(" • duplicate files\n")
+        # Check for duplicate names
+        elif len(name_list) != len(set(name_list)):
+            # Duplicate names
+            errors.append(" • duplicate names\n")
+        # If no events
+        if event_count == 0:
+            # No events
+            errors.append(" • no events\n")
+        # Return the errors which have been found
+        return list(set(errors))
 
     def load_experiments(self):
         """Called by previous screen when migrating experiments over.
@@ -130,6 +212,15 @@ class IE3Window(Screen):
             self.ion_view.texture = None
             # Update the thumbnail cursor
             self.thumbnail_bar.cursor_x = -9999
+
+    def update_video(self):
+        """Update the video view by displaying the current frame."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            image = current.get_frame(current.current_frame)
+            # Convert the image to a format useable for Kivy
+            self.video_widget.texture = kivify_image(image)
     
     def update_current_frame(self):
         """Updates the current experiments current_frame attribute."""
@@ -144,14 +235,60 @@ class IE3Window(Screen):
             frame_num = start_frame + int((frame_range) * (self.video_slider.value_normalized - 10e-8)) + 1 # 1 -> num_frames
             current.current_frame = frame_num
 
-    def update_video(self):
-        """Update the video view by displaying the current frame."""
+    def update_slider_on_event(self):
+        """Updates the self.slider_on_event boolean."""
+        on_event = False
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            image = current.get_frame(current.current_frame)
-            # Convert the image to a format useable for Kivy
-            self.video_widget.texture = kivify_image(image)
+            # Get params
+            current_frame = current.current_frame
+            event_start_frame = current.event_start_frame
+            event_ranges = current.event_ranges
+            # If slider is on start
+            if event_start_frame is not None and event_start_frame == current_frame:
+                on_event = True
+            # If still false
+            else:
+                # Find if frame is in ranges
+                for start, end in event_ranges:
+                    if start <= current_frame <= end:
+                        on_event = True
+                        break
+        # Update with final value
+        self.slider_on_event = on_event
+
+    def set_cursor_on_frame(self, frame):
+        """Will set the cursor on the given frame number."""
+        # Find the current range of frames in view
+        current = self.app.current_experiment
+        start_frame = int((current.num_frames - 1) * self.zoom_start) + 1
+        end_frame = int((current.num_frames - 1) * self.zoom_end) + 1
+        # If the current frame is in the zoom range
+        current_frame_in_range = start_frame <= frame <= end_frame
+        if current_frame_in_range:
+            # Calculate the proper position
+            frame_range = end_frame - start_frame if end_frame > start_frame else 1
+            new_value = (frame - start_frame) / frame_range
+        # If the current frame is out of view leftwards
+        elif frame <= start_frame:
+            # Just set to 0
+            new_value = 0
+        # If the current frame is out of view rightwards
+        elif end_frame <= frame:
+            new_value = 1
+        # This shouldnt be possible, but still
+        else:
+            print('issue !')
+            new_value = 0.5
+        # Is it different to before?
+        new_value_is_same = new_value == self.video_slider.value
+        # Set actual value
+        self.video_slider.value = new_value
+        # Is it different to before?
+        if new_value_is_same:
+            # Update everything visually
+            self.update_fields()
 
     def zoom_in(self):
         """Try zoom in."""
@@ -304,54 +441,77 @@ class IE3Window(Screen):
             # Maintain cursor position on the same frame
             self.set_cursor_on_frame(self.app.current_experiment.current_frame)
 
-    def set_cursor_on_frame(self, frame):
-        """Will set the cursor on the given frame number."""
-        # Find the current range of frames in view
+    def ion_adjust_left(self, amount=1):
+        """Try shift the ion data to the left."""
+        # If there is a current experiment
         current = self.app.current_experiment
-        start_frame = int((current.num_frames - 1) * self.zoom_start) + 1
-        end_frame = int((current.num_frames - 1) * self.zoom_end) + 1
-        # If the current frame is in the zoom range
-        current_frame_in_range = start_frame <= frame <= end_frame
-        if current_frame_in_range:
-            # Calculate the proper position
-            frame_range = end_frame - start_frame if end_frame > start_frame else 1
-            new_value = (frame - start_frame) / frame_range
-        # If the current frame is out of view leftwards
-        elif frame <= start_frame:
-            # Just set to 0
-            new_value = 0
-        # If the current frame is out of view rightwards
-        elif end_frame <= frame:
-            new_value = 1
-        # This shouldnt be possible, but still
-        else:
-            print('issue !')
-            new_value = 0.5
-        # Is it different to before?
-        new_value_is_same = new_value == self.video_slider.value
-        # Set actual value
-        self.video_slider.value = new_value
-        # Is it different to before?
-        if new_value_is_same:
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the scroll
+            new_ion_start = start - amount
+            new_ion_end = stop - amount
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
             # Update everything visually
             self.update_fields()
 
-    def on_back_btn(self):
-        """called by back btn
-        - makes a BackPopup object
-        - if there are no experiments, it immediately closes it"""
-        # If there are any experiment boxes
-        if len(self.exp_scroll.grid_layout.children) > 0:
-            # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup(from_screen="IE3", to_screen="IE1")
-            # Open it
-            popup.open()
-        # If there are not experiments
-        else:
-            # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup(from_screen="IE3", to_screen="IE1")
-            # THEN IMMEDIATELY CLOSE IT
-            popup.on_answer("yes")
+    def ion_adjust_right(self, amount=1):
+        """Try shift the ion data to the right."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the scroll
+            new_ion_start = start + amount
+            new_ion_end = stop + amount
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_in(self, amount=1):
+        """Try zoom into the ion data"""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the zoom
+            new_ion_start = start - amount
+            new_ion_end = stop + amount
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_out(self, amount=1):
+        """Try zoom into the ion data"""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            start, stop = current.ion_frame_range
+            # Preform the zoom
+            new_ion_start = start + amount
+            new_ion_end = stop - amount
+            # ensure not too small
+            min_num_frames = min(100, current.num_frames)
+            if new_ion_end - new_ion_start < min_num_frames:
+                centre = (stop + start) / 2
+                new_ion_start = int(centre - min_num_frames / 2)
+                new_ion_end = int(centre + min_num_frames / 2)
+            # Set actual value
+            current.ion_frame_range = (new_ion_start, new_ion_end)
+            # Update everything visually
+            self.update_fields()
+
+    def ion_adjust_reset(self):
+        """Reset the ion data's alignment."""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Set actual value
+            current.ion_frame_range = (1, current.num_frames)
+            # Update everything visually
+            self.update_fields()
     
     def add_start_here(self):
         """Called by 'Enter Start' button - Adds an event start if valid"""
@@ -430,45 +590,6 @@ class IE3Window(Screen):
                         break
         # Update everything visually
         self.update_fields()
-    
-    def on_ion_range_text(self, text, start_or_stop):
-        # If there is a current experiment and there is ion data
-        current = self.app.current_experiment
-        if current is not None and self.use_ion and self.app.current_has_ion:
-            # If the text is a number
-            if re.match(r'^[-]?\d+$', text):
-                # Get the old values
-                old_start, old_stop = current.ion_frame_range
-                # Get the new values
-                new_ion_start = int(text) if start_or_stop == 'start' else old_start
-                new_ion_end = int(text) if start_or_stop == 'end' else old_stop
-                # If new values are valid
-                min_num_frames = min(100, current.num_frames)
-                if new_ion_end > new_ion_start + min_num_frames:
-                    # Set new values
-                    current.ion_frame_range = (new_ion_start, new_ion_end)
-                    # Update everything visually
-                    self.update_fields()
-                else:
-                    # Keep old values and update text boxes
-                    self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
-                    self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
-            else:
-                # Keep old values and update text boxes
-                self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
-                self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
-    
-    def on_frame_text(self, text):
-        # If there is a current experiment
-        current = self.app.current_experiment
-        if current is not None:
-            # If the text is a valid number
-            if re.match(r'^[-]?\d+$', text) and int(text) >= 1 and int(text) <= current.num_frames:
-                # Set new frame
-                self.set_cursor_on_frame(int(text))
-            else:
-                # Set old frame
-                self.set_cursor_on_frame(current.current_frame)
 
     def on_key_up(self, key):
         """called when a key is released up
@@ -522,101 +643,45 @@ class IE3Window(Screen):
                 else:
                     self.ion_adjust_reset()
         return True
-
-    def update_slider_on_event(self):
-        """Updates the self.slider_on_event boolean."""
-        on_event = False
-        # If there is a current experiment
+    
+    def on_ion_range_text(self, text, start_or_stop):
+        # If there is a current experiment and there is ion data
         current = self.app.current_experiment
-        if current is not None:
-            # Get params
-            current_frame = current.current_frame
-            event_start_frame = current.event_start_frame
-            event_ranges = current.event_ranges
-            # If slider is on start
-            if event_start_frame is not None and event_start_frame == current_frame:
-                on_event = True
-            # If still false
+        if current is not None and self.use_ion and self.app.current_has_ion:
+            # If the text is a number
+            if re.match(r'^[-]?\d+$', text):
+                # Get the old values
+                old_start, old_stop = current.ion_frame_range
+                # Get the new values
+                new_ion_start = int(text) if start_or_stop == 'start' else old_start
+                new_ion_end = int(text) if start_or_stop == 'end' else old_stop
+                # If new values are valid
+                min_num_frames = min(100, current.num_frames)
+                if new_ion_end > new_ion_start + min_num_frames:
+                    # Set new values
+                    current.ion_frame_range = (new_ion_start, new_ion_end)
+                    # Update everything visually
+                    self.update_fields()
+                else:
+                    # Keep old values and update text boxes
+                    self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
+                    self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
             else:
-                # Find if frame is in ranges
-                for start, end in event_ranges:
-                    if start <= current_frame <= end:
-                        on_event = True
-                        break
-        # Update with final value
-        self.slider_on_event = on_event
-
-    def ion_adjust_left(self, amount=1):
-        """Try shift the ion data to the left."""
+                # Keep old values and update text boxes
+                self.ion_range_start_text_box.text = str(current.ion_frame_range[0])
+                self.ion_range_end_text_box.text = str(current.ion_frame_range[1])
+    
+    def on_frame_text(self, text):
         # If there is a current experiment
         current = self.app.current_experiment
         if current is not None:
-            start, stop = current.ion_frame_range
-            # Preform the scroll
-            new_ion_start = start - amount
-            new_ion_end = stop - amount
-            # Set actual value
-            current.ion_frame_range = (new_ion_start, new_ion_end)
-            # Update everything visually
-            self.update_fields()
-
-    def ion_adjust_right(self, amount=1):
-        """Try shift the ion data to the right."""
-        # If there is a current experiment
-        current = self.app.current_experiment
-        if current is not None:
-            start, stop = current.ion_frame_range
-            # Preform the scroll
-            new_ion_start = start + amount
-            new_ion_end = stop + amount
-            # Set actual value
-            current.ion_frame_range = (new_ion_start, new_ion_end)
-            # Update everything visually
-            self.update_fields()
-
-    def ion_adjust_in(self, amount=1):
-        """Try zoom into the ion data"""
-        # If there is a current experiment
-        current = self.app.current_experiment
-        if current is not None:
-            start, stop = current.ion_frame_range
-            # Preform the zoom
-            new_ion_start = start - amount
-            new_ion_end = stop + amount
-            # Set actual value
-            current.ion_frame_range = (new_ion_start, new_ion_end)
-            # Update everything visually
-            self.update_fields()
-
-    def ion_adjust_out(self, amount=1):
-        """Try zoom into the ion data"""
-        # If there is a current experiment
-        current = self.app.current_experiment
-        if current is not None:
-            start, stop = current.ion_frame_range
-            # Preform the zoom
-            new_ion_start = start + amount
-            new_ion_end = stop - amount
-            # ensure not too small
-            min_num_frames = min(100, current.num_frames)
-            if new_ion_end - new_ion_start < min_num_frames:
-                centre = (stop + start) / 2
-                new_ion_start = int(centre - min_num_frames / 2)
-                new_ion_end = int(centre + min_num_frames / 2)
-            # Set actual value
-            current.ion_frame_range = (new_ion_start, new_ion_end)
-            # Update everything visually
-            self.update_fields()
-
-    def ion_adjust_reset(self):
-        """Reset the ion data's alignment."""
-        # If there is a current experiment
-        current = self.app.current_experiment
-        if current is not None:
-            # Set actual value
-            current.ion_frame_range = (1, current.num_frames)
-            # Update everything visually
-            self.update_fields()
+            # If the text is a valid number
+            if re.match(r'^[-]?\d+$', text) and int(text) >= 1 and int(text) <= current.num_frames:
+                # Set new frame
+                self.set_cursor_on_frame(int(text))
+            else:
+                # Set old frame
+                self.set_cursor_on_frame(current.current_frame)
 
     def on_current_experiment(self, instance, current_experiment):
         """Called when current experiment changes. Updates slider"""
@@ -647,6 +712,23 @@ class IE3Window(Screen):
         """Called when slider value changes. Updates things."""
         # Update everything visually
         self.update_fields()
+
+    def on_back_btn(self):
+        """called by back btn
+        - makes a BackPopup object
+        - if there are no experiments, it immediately closes it"""
+        # If there are any experiment boxes
+        if len(self.exp_scroll.grid_layout.children) > 0:
+            # Make pop up - asks if you are sure you want to exit
+            popup = BackPopup(from_screen="IE3", to_screen="IE1")
+            # Open it
+            popup.open()
+        # If there are not experiments
+        else:
+            # Make pop up - asks if you are sure you want to exit
+            popup = BackPopup(from_screen="IE3", to_screen="IE1")
+            # THEN IMMEDIATELY CLOSE IT
+            popup.on_answer("yes")
 
 
 class IonCurrentView(Image):
@@ -836,13 +918,9 @@ class IonCurrentView(Image):
                     self.prev_sig_min_max_num = (sig_min, sig_max, num_labels)
                     # Generate some new labels
                     labels = generate_y_axis_labels(sig_min, sig_max, num_labels)
-                    print()
-                    print(labels)
-                    print(sig_min, sig_max)
                     for label in labels:
                         # Normalise number for cv2 image
                         normalised_value = -1 * float((float(label) - sig_min) / (sig_max - sig_min) - 1) * (height - gap_y * 2) + gap_y
-                        print(normalised_value, height)
                         # Draw a line at this y-value
                         cv2.line(image, (0, int(normalised_value)), (int(dp(8)), int(normalised_value)), ION_EVENT_EDGE_COLOUR, 1)
                         # If the y-axis range of the signal is different to before
