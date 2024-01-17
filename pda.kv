@@ -68,7 +68,7 @@ WindowManager:
                     # Title
                     Label:
                         id: title_label
-                        text: 'Indeukbaar?'
+                        text: 'How squishy is the spore?'
                         font_name: 'resources\\Inter.ttf'
                         font_size: '44dp'
                         size_hint: None, None
@@ -963,6 +963,8 @@ WindowManager:
     evt_scroll: evt_scroll
     select_event_btn: select_event_btn
     location_label: location_label
+    frame_range_label: frame_range_label
+    event_id_label: event_id_label
     param_grid_layout: param_grid_layout
     name_grid_layout: name_grid_layout
     name_input: name_input
@@ -1068,16 +1070,57 @@ WindowManager:
                     GridLayout:
                         size_hint_x: 1
                         rows: 2
-                        Label:
-                            font_name: 'resources\\Inter.ttf'
-                            text: 'Video Preview'
-                            font_size: '21dp'
+                        FloatLayout:
                             size_hint: (1, 0.2)
-                        Image:
-                            id: image_widget
+                            Label:
+                                font_name: 'resources\\Inter.ttf'
+                                text: 'Event Preview'
+                                font_size: '21dp'
+                                size_hint: (1, 1)
+                                pos_hint: {'x' : 0, 'y' : 0}
+                            # ID label
+                            Label:
+                                id: event_id_label
+                                font_name: 'resources\\Inter.ttf'
+                                text: ''
+                                halign: 'right'
+                                valign: 'center'
+                                font_size: '11dp'
+                                size_hint: (0.3, None)
+                                height: self.texture_size[1]
+                                pos_hint: {'right' : 1, 'y' : 0.55}
+                            # Frame range label
+                            Label:
+                                id: frame_range_label
+                                font_name: 'resources\\Inter.ttf'
+                                text: ''
+                                halign: 'right'
+                                valign: 'center'
+                                font_size: '11dp'
+                                size_hint: (0.3, None)
+                                height: self.texture_size[1]
+                                pos_hint: {'right' : 1, 'top' : 0.45}
+                        FloatLayout:
                             size_hint: (1, 0.8)
-                            fit_mode: 'contain'
-                            color: CLEAR if self.texture is None else WHITE
+                            # Export button
+                            Button:
+                                id: export_btn
+                                background_color: CLEAR
+                                size_hint: (None, None)
+                                size: '24dp', '24dp'
+                                pos_hint: {'right' : 0.98, 'top' : 1}
+                                on_press: root.on_export()
+                                Image:
+                                    source: 'resources\\export.png' 
+                                    opacity: 0 if app.current_event is None else 1
+                                    pos: export_btn.pos 
+                                    size: export_btn.size
+                            Image:
+                                id: image_widget
+                                size_hint: (1, 1)
+                                pos_hint: {'x' : 0, 'y' : 0}
+                                fit_mode: 'contain'
+                                color: CLEAR if self.texture is None else WHITE
         FloatLayout:
             size_hint_x: 0.02
         GridLayout:
@@ -1246,7 +1289,6 @@ WindowManager:
     size_hint_x: 1
     size_hint_y: None
     height: '66dp'
-    name: 'temp'
     date: None
     file_location: None
     background_normal: ''
@@ -1341,7 +1383,6 @@ WindowManager:
     size_hint_x: 1
     size_hint_y: None
     height: '66dp'
-    name: 'temp'
     date: None
     file_location: None
     background_normal: ''
@@ -1357,7 +1398,7 @@ WindowManager:
             size: self.size
             radius: [dp(8),]
     Label:
-        text: 'Name:  ' + str(root.experiment.name)
+        text: 'Name:  ' + str(root.event.name)
         font_name: 'resources\\Inter.ttf'
         font_size: '14dp'
         color: WHITE

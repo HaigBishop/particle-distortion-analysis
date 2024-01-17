@@ -253,7 +253,7 @@ class Event():
         # General
         self.id = id
         self.experiment = experiment
-        self.name = experiment.name + "_" + str(id)
+        self.name = experiment.name + "_evt_" + str(id)
         # Video stuff
         self.first_frame_num = first_frame_num
         self.last_frame_num = last_frame_num

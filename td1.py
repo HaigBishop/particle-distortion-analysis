@@ -10,7 +10,9 @@ from kivy.uix.screenmanager import Screen
 
 # Import modules
 from plyer import filechooser
-from cv2 import flip
+import cv2
+from datetime import datetime
+import os
 
 # Import local modules
 from popup_elements import BackPopup
@@ -57,8 +59,8 @@ class TD1Window(Screen):
         """called when [select event file(s)] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
-        # Only allow selection of TDMS
-        filters = []
+        # Only allow selection of JSON
+        filters = [("JSON files", "*.json")]
         # Open folder selector window - send selection to self.selected
         filechooser.open_file(
             on_selection=self.experiment_json_selected, 
@@ -171,11 +173,15 @@ class TD1Window(Screen):
         if current is not None:
             # Update with current event's values
             self.location_label.text = str(current.experiment.vid_loc)
+            self.frame_range_label.text = 'Frame range:  ' + str(current.first_frame_num) + ' - ' + str(current.last_frame_num)
+            self.event_id_label.text = 'Event ID:  ' + str(current.id)
             self.name_input.text = str(current.name)
             self.update_image_preview()
         else:
             # Reset with defaults
             self.location_label.text = "No event selected"
+            self.frame_range_label.text = ""
+            self.event_id_label.text = ""
             self.name_input.text = ""
             self.image_widget.texture = None
 
@@ -194,7 +200,7 @@ class TD1Window(Screen):
         current = self.app.current_event
         if current is not None:
             # Convert the image to a format useable for Kivy
-            self.image_widget.texture = kivify_image(image)
+            self.image_widget.texture = kivify_image(current.first_frame)
 
     def on_back_btn(self):
         """called by back btn
@@ -212,6 +218,30 @@ class TD1Window(Screen):
             popup = BackPopup(from_screen="TD1", to_screen="main")
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
+
+    def on_export(self):
+        """Called when export button is pressed. 
+        - Exports current frame if there is one"""
+        # If there is a current experiment
+        current = self.app.current_event
+        if current is not None:
+            # Get the directory and name
+            directory = current.experiment.directory + '\\'
+            name = current.name
+            # Format the date and time as text
+            now = datetime.now()
+            date_extension = "_" + str(now.strftime("%d-%m-%y_%H-%M-%S"))
+            # Check if the directory exists
+            if not os.path.exists(directory):
+                # If it doesn't exist, create it
+                os.makedirs(directory)
+            # Get the image itself
+            image = current.first_frame
+            # Combine all and write
+            path = directory + name + "_capture" + date_extension + ".png"
+            cv2.imwrite(path, image)
+            # Print export to console
+            print('Exported: ' + path)
 
     def _on_file_drop(self, file_path):
         """called when a file is dropped on this screen
