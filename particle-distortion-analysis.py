@@ -1,20 +1,18 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.0)
+Program: Particle Deformation Analysis (Version 0.2.1)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 11/01/2024
+Date: 17/01/2024
 Version Description:
-- allow IE3 -> TD1
-- allow import of events on TD1 via JSON files
-
-Version 0.2.0 !
-- Reached a milestone here
-- Can fully import and handle video, ion current, and experiment files
-- However, the application is not a "complete product", so it is not v1.0 yet
+- new example image
+- fix flipped image on TD1
+- new open directory button image
+- new export frame button
+- replace button with a 'use ion' checkbox
 """
 
-# Stops debug messages - alsoprevents an error after .exe packaging
+# Stops debug messages - also prevents an error after .exe building
 # os.environ["KIVY_NO_CONSOLELOG"] = "1"
 
 # Import kivy 

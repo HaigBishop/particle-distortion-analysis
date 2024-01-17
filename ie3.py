@@ -18,6 +18,8 @@ import cv2
 import numpy as np
 from math import exp
 import re
+from datetime import datetime
+import os
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
@@ -712,6 +714,30 @@ class IE3Window(Screen):
         """Called when slider value changes. Updates things."""
         # Update everything visually
         self.update_fields()
+
+    def on_export(self):
+        """Called when export button is pressed. 
+        - Exports current frame if there is one"""
+        # If there is a current experiment
+        current = self.app.current_experiment
+        if current is not None:
+            # Get the directory and name
+            directory = current.directory + '\\'
+            name = current.name
+            # Format the date and time as text
+            now = datetime.now()
+            date_extension = "_" + str(now.strftime("%d-%m-%y_%H-%M-%S"))
+            # Check if the directory exists
+            if not os.path.exists(directory):
+                # If it doesn't exist, create it
+                os.makedirs(directory)
+            # Get the image itself
+            image = current.get_frame(current.current_frame)
+            # Combine all and write
+            path = directory + name + "_capture" + date_extension + ".png"
+            cv2.imwrite(path, image)
+            # Print export to console
+            print('Exported: ' + path)
 
     def on_back_btn(self):
         """called by back btn

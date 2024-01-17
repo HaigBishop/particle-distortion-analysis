@@ -78,7 +78,7 @@ WindowManager:
                         pos_hint: {'x': 0, 'y': 0}
                     # version
                     Label:
-                        text: 'v0.1'
+                        text: 'v0.2'
                         font_name: 'resources\\Inter.ttf'
                         font_size: '21dp'
                         padding: [dp(7), 0]
@@ -186,6 +186,8 @@ WindowManager:
                     pos_hint: {'center_x':0.5, 'top':1}
                     fit_mode: 'cover'
                     source: 'resources\\example_image.png'
+                    anim_loop: 0
+                    anim_delay: .0667
     # Whole screen float for the info screen
     FloatLayout:
         id: info_layout
@@ -429,7 +431,7 @@ WindowManager:
                 id: exp_scroll
                 window: ie1_window
                 size_hint:(None,None)
-                height: right_grid.height - dp(120)
+                height: right_grid.height - dp(114)
                 width: right_grid.width - dp(4)
                 bar_pos_y: 'right'
                 do_scroll_x: False
@@ -437,27 +439,41 @@ WindowManager:
             FloatLayout:
                 size_hint:(None,None)
                 size: (right_grid.width - dp(4), dp(4))
-            TangyButton:
-                disabled:  len(root.exp_scroll.grid_layout.children) == 0 or not root.ion_file_attached
-                disabled_color: DARK_GREY
-                text: 'Proceed With Current Data'
+            GridLayout:
+                cols: 2
                 size_hint:(None,None)
-                font_size: '12dp'
-                font_name: 'resources\\Inter.ttf'
-                size: (right_grid.width - dp(4), '33dp')
-                on_release: root.on_proceed(with_ion=True)
+                size: (right_grid.width - dp(4), '27dp')
+                FloatLayout:
+                    id: dumbass_layout
+                    size_hint: None, None
+                    size: '27dp', '27dp'
+                    CheckBox:
+                        id: use_ion_checkbox
+                        active: True
+                        size_hint: 1, 1
+                        pos: dumbass_layout.x - 18 + dp(12), dumbass_layout.y - 18 + dp(12)
+                Label:
+                    text: ' Use Ion Current Data'
+                    size_hint:(1,1)
+                    padding: ['7dp', 0, 0, 0]
+                    font_name: 'resources\\Inter.ttf'
+                    color: WHITE
+                    font_size: '11dp'
+                    valign: 'center'
+                    halign: 'left'
+                    text_size: self.size
             FloatLayout:
                 size_hint:(None,None)
                 size: (right_grid.width - dp(4), '4dp')
             TangyButton:
                 disabled:  len(root.exp_scroll.grid_layout.children) == 0
                 disabled_color: DARK_GREY
-                text: 'Proceed Without Current Data'
+                text: 'Proceed'
                 size_hint:(None,None)
-                font_size: '12dp'
+                font_size: '15dp'
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width - dp(4), '33dp')
-                on_release: root.on_proceed(with_ion=False)
+                on_release: root.on_proceed(with_ion=True) if use_ion_checkbox.active else root.on_proceed(with_ion=False)
     LoadingScreen:
         disabled: not root.is_loading
         x: 0 if root.is_loading else 69420
@@ -786,11 +802,27 @@ WindowManager:
                     GridLayout:
                         size_hint_x: 0.7
                         rows: 4
-                        Image:
-                            id: video_widget
+                        FloatLayout:
                             size_hint: (1, 0.82)
-                            fit_mode: 'contain'
-                            color: CLEAR if self.texture is None else WHITE
+                            # Export button
+                            Button:
+                                id: export_btn
+                                background_color: CLEAR
+                                size_hint: (None, None)
+                                size: '24dp', '24dp'
+                                pos_hint: {'right' : 0.98, 'top' : 1}
+                                on_press: root.on_export()
+                                Image:
+                                    source: 'resources\\export.png' 
+                                    opacity: 0 if app.current_experiment is None else 1
+                                    pos: export_btn.pos 
+                                    size: export_btn.size
+                            Image:
+                                id: video_widget
+                                fit_mode: 'contain'
+                                size_hint: (1, 1)
+                                pos_hint: {'x' : 0, 'y' : 0}
+                                color: CLEAR if self.texture is None else WHITE
                         FloatLayout:
                             size_hint:(1, 0.01)
                         ThumbnailBar:
@@ -1283,7 +1315,7 @@ WindowManager:
         pos: (root.x + root.width - dp(32), root.y + root.height - dp(19))
         on_press: root.on_open_btn()
         Image:
-            source: 'resources\\open_btn.png'
+            source: 'resources\\open_folder.png'
             y: self.parent.y + dp(3)
             x: self.parent.x
             size: ('13dp', '13dp')
@@ -1378,7 +1410,7 @@ WindowManager:
         pos: (root.x + root.width - dp(32), root.y + root.height - dp(19))
         on_press: root.on_open_btn()
         Image:
-            source: 'resources\\open_btn.png'
+            source: 'resources\\open_folder.png'
             y: self.parent.y + dp(3)
             x: self.parent.x
             size: ('13dp', '13dp')

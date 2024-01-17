@@ -193,8 +193,6 @@ class TD1Window(Screen):
         # If there is a current event
         current = self.app.current_event
         if current is not None:
-            # Get the first frame and flip for Kivy
-            image = flip(current.first_frame, 0)
             # Convert the image to a format useable for Kivy
             self.image_widget.texture = kivify_image(image)
 
