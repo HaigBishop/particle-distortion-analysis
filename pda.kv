@@ -25,6 +25,7 @@ WindowManager:
     IE1Window:
     IE3Window:
     TD1Window:
+    TD2Window:
 
 
 
@@ -68,7 +69,7 @@ WindowManager:
                     # Title
                     Label:
                         id: title_label
-                        text: 'How squishy is the spore?'
+                        text: 'Particle Distortion Analysis?'
                         font_name: 'resources\\Inter.ttf'
                         font_size: '44dp'
                         size_hint: None, None
@@ -1157,6 +1158,220 @@ WindowManager:
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-dp(4), '33dp')
                 on_release: root.on_predict()
+
+
+
+
+
+
+# =========================================================================================
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# =========================================================================================
+
+<TD2Window>:
+    name: 'TD2'
+    id: td2_window
+    evt_scroll: evt_scroll
+    location_label: location_label
+    frame_range_label: frame_range_label
+    event_id_label: event_id_label
+    param_grid_layout: param_grid_layout
+    image_widget: image_widget
+    GridLayout:
+        canvas:
+            Color:
+                rgba: CLEAR_WHITE
+            Line:
+                points: [0, self.height - dp(40), self.width, self.height - dp(40)]
+                width: 0.5
+            Line:
+                points: [self.width*0.75, self.height, self.width*0.75, 0]
+                width: 0.5
+            Color:
+                rgba: DARKISH_GREY
+            Rectangle:
+                pos: (0,0)
+                size: (self.width*0.75, (self.height-dp(40)) * 0.9)
+        cols: 3
+        GridLayout:
+            rows: 2
+            size_hint_x: 0.74
+            GridLayout:
+                cols: 3
+                size_hint_y: None
+                height: '40dp'
+                BlankButton:
+                    text:'←'
+                    font_name: 'resources\\Inter.ttf'
+                    font_size: '35dp'
+                    padding: [0, '13dp']
+                    size_hint_x: None
+                    width: '80dp'
+                    on_release: 
+                        root.on_back_btn()
+                Label:
+                    font_name: 'resources\\Inter.ttf'
+                    text: 'Track Deformation'
+                    font_size: '20dp'
+                    padding: ['3dp', '2dp']
+                    size_hint_x: None
+                    width: '460dp'
+                    halign: 'left'
+                    valign: 'center'
+                    text_size: self.size
+                FloatLayout:
+                    size_hint_x: 1
+            GridLayout:
+                rows: 2
+                size_hint_y: 1
+                # Info bar above image
+                FloatLayout:
+                    size_hint: 1, 0.1
+                    Label:
+                        id: location_label
+                        color: WHITE
+                        size_hint:(None,None)
+                        size: (self.parent.width * 0.7, '27dp')
+                        pos_hint: {'x':.03, 'y':0.3}
+                        text: 'No file(s) selected'
+                        halign: 'left'
+                        font_name: 'resources\\Inter.ttf'
+                        text_size: self.size
+                        shorten: True
+                        font_size: '12dp'
+                    FloatLayout:
+                        size_hint: (None, 1)
+                        width: self.parent.width * 0.3
+                        pos_hint: {'x':.72, 'y':0.02}
+                        # ID label
+                        Label:
+                            id: event_id_label
+                            font_name: 'resources\\Inter.ttf'
+                            text: ''
+                            halign: 'right'
+                            valign: 'center'
+                            font_size: '11dp'
+                            size_hint: (0.9, None)
+                            height: self.texture_size[1]
+                            pos_hint: {'right' : 1, 'y' : 0.55}
+                        # Frame range label
+                        Label:
+                            id: frame_range_label
+                            font_name: 'resources\\Inter.ttf'
+                            text: ''
+                            halign: 'right'
+                            valign: 'center'
+                            font_size: '11dp'
+                            size_hint: (0.9, None)
+                            height: self.texture_size[1]
+                            pos_hint: {'right' : 1, 'top' : 0.45}
+                # Box for image
+                FloatLayout:
+                    id: param_grid_layout
+                    disabled: app.current_event is None
+                    size_hint: 1, 0.9
+                    # Export button
+                    Button:
+                        id: export_btn
+                        background_color: CLEAR
+                        size_hint: (None, None)
+                        size: '24dp', '24dp'
+                        pos_hint: {'right' : 0.98, 'top' : 0.97}
+                        on_press: root.on_export()
+                        Image:
+                            source: 'resources\\export.png' 
+                            opacity: 0 if app.current_event is None else 1
+                            pos: export_btn.pos 
+                            size: export_btn.size
+                    # Instructions
+                    GridLayout:
+                        rows: 7
+                        size_hint: (None, None)
+                        size: '75dp', '325dp'
+                        pos_hint: {'x' : 0.02, 'y' : 0.02}
+                        Label:
+                            font_name: 'resources\\Inter.ttf'
+                            text: 'Scale Particle'
+                            halign: 'right'
+                            valign: 'center'
+                            font_size: '12dp'
+                            size_hint: (None, None)
+                            size: '75dp', '35dp'
+                        Image:
+                            source: 'resources\\scroll.png'
+                            size_hint: (None, None)
+                            size: '75dp', '55dp'
+                        FloatLayout:
+                            size_hint: (None, None)
+                            size: '75dp', '8dp'
+                        Label:
+                            font_name: 'resources\\Inter.ttf'
+                            text: 'Move Particle'
+                            halign: 'right'
+                            valign: 'center'
+                            font_size: '12dp'
+                            size_hint: (None, None)
+                            size: '75dp', '35dp'
+                        Image:
+                            source: 'resources\\wasd.png'
+                            size_hint: (None, None)
+                            size: '75dp', '75dp'
+                        Label:
+                            font_name: 'resources\\Inter.ttf'
+                            text: 'Move Pipette'
+                            halign: 'right'
+                            valign: 'center'
+                            font_size: '12dp'
+                            size_hint: (None, None)
+                            size: '75dp', '35dp'
+                        Image:
+                            source: 'resources\\wasd_shift.png'
+                            size_hint: (None, None)
+                            size: '75dp', '75dp'
+
+                    # This first frame image
+                    Image:
+                        id: image_widget
+                        size_hint: (1, 1)
+                        pos_hint: {'x' : 0, 'y' : 0}
+                        fit_mode: 'contain'
+                        color: CLEAR if self.texture is None else WHITE
+        FloatLayout:
+            size_hint_x: 0.02
+        GridLayout:
+            id: right_grid
+            rows: 4
+            size_hint_x: 0.24
+            Label:
+                text:'Events (' + str(len(root.evt_scroll.grid_layout.children)) + ')' 
+                size_hint_y: None
+                padding: [0, '30dp']
+                font_name: 'resources\\Inter.ttf'
+                color: WHITE
+                font_size: '19dp'
+                height: '40dp'
+                valign: 'center'
+            EventList:
+                id: evt_scroll
+                window: td2_window
+                size_hint:(None,None)
+                height: right_grid.height - dp(83)
+                width: right_grid.width-dp(4)
+                bar_pos_y: 'right'
+                do_scroll_x: False
+                do_scroll_y: True
+            FloatLayout:
+                size_hint:(None,None)
+                size: (right_grid.width-dp(4), '4dp')
+            TangyButton:
+                disabled:  len(root.evt_scroll.grid_layout.children) == 0
+                disabled_color: DARK_GREY
+                text: 'Track Distortion'
+                size_hint:(None,None)
+                font_size: '13dp'
+                font_name: 'resources\\Inter.ttf'
+                size: (right_grid.width-dp(4), '33dp')
+                on_release: root.on_confirm()
 
 
 

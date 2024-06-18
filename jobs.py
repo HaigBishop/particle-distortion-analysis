@@ -15,9 +15,11 @@ import os
 from subprocess import Popen as p_open
 from scipy.signal import decimate
 import numpy as np
+import cv2
 
 # Import local modules
 from file_management import read_vid, get_frame, count_frames, file_date, fft_and_filter, normalise_and_smooth_sig, align_sig_to_frames, read_tdms
+from tracking import detect_start
 
 # Desired size to downsample signal data
 # raw data is not discarded, this is only used for display
@@ -126,7 +128,7 @@ class Experiment():
         self.events = []
     
     def make_events(self, use_ion):
-        """Simply makes event objects for all events of this experiment usingthe self.event_ranges"""
+        """Simply makes event objects for all events of this experiment using the self.event_ranges"""
         # Make a list to hold all events
         events = []
         # If we have any events selected
@@ -262,6 +264,152 @@ class Event():
        
         # Ion current file
         self.ion_data = ion_data
+
+        # Start point features (from prediction/user input)
+        self.particle_pos = None
+        self.particle_radius = None
+        self.pipette_angle = None
+        self.left_bottom_x = None
+        self.right_bottom_x = None
+
+    def predict_start(self):
+        """Predict the position, angle, etc of the start point.
+        Then, update those values so they can be displayed... or exported etc."""
+        # Run the first frame through the algorithm
+        particle_pos, particle_radius, pipette_angle, left_bottom_x, right_bottom_x = detect_start(self.first_frame, display=False)
+        # Update the values
+        self.particle_pos = particle_pos
+        self.particle_radius = particle_radius
+        self.pipette_angle = pipette_angle
+        self.left_bottom_x = left_bottom_x
+        self.right_bottom_x = right_bottom_x
+
+    def drawn_first_frame(self, zoomed):
+        """Take the first frame, draw the position, angle, etc. Return it.
+        - the particle is simply a circle with position and radius given
+        - the pipette consists of two lines (angle given) and end at their bottom_x value."""
+        # Draw the particle
+        frame = self.first_frame.copy()
+        if self.particle_pos is not None and self.particle_radius is not None:
+            cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), int(self.particle_radius), (0, 0, 255), 1)
+        # Draw the pipette
+        if self.pipette_angle is not None and self.left_bottom_x is not None and self.right_bottom_x is not None:
+            # Get the height of the image
+            height = self.first_frame.shape[0]
+            # Draw 2 lines representing the pipette sides
+            line_start = (int(self.left_bottom_x), int(0))
+            line_end = (int(self.left_bottom_x + self.pipette_angle * height), int(height))
+            cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
+            line_start = (int(self.right_bottom_x), int(0))
+            line_end = (int(self.right_bottom_x + self.pipette_angle * height), int(height))
+            cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
+        # Zoom by cropping the image centred on the circle
+        if zoomed:
+            # Get the centre of the circle
+            centre_x = int(self.particle_pos[0])
+            centre_y = int(self.particle_pos[1])
+            # Get the radius of the circle
+            radius = int(self.particle_radius)
+            # Get the size of the image
+            height, width = self.first_frame.shape[:2]
+            # Get the new size of the image and maintain aspect ratio
+            if height > width:
+                new_height = int(radius * 6 * (height / width))
+                new_width = int(radius * 6)
+            else:
+                new_height = int(radius * 6)
+                new_width = int(radius * 6 * (width / height))
+            # Get the new top left corner of the image
+            top_left_x = centre_x - int(new_width / 2)
+            top_left_y = centre_y - int(new_height / 2)
+            # Get the new bottom right corner of the image
+            bottom_right_x = centre_x + int(new_width / 2)
+            bottom_right_y = centre_y + int(new_height / 2)
+            # Crop the image
+            frame = frame[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
+        # Return the frame
+        return frame
+    
+    def zoom_in_pipette(self):
+        """Simply moves the pipette positions closer together"""
+        # If they are more than 10 pixels apart
+        if self.right_bottom_x - self.left_bottom_x > 10:
+            # Move the pipette closer together
+            self.left_bottom_x = self.left_bottom_x + 1
+            self.right_bottom_x = self.right_bottom_x - 1
+    
+    def zoom_out_pipette(self):
+        """Simply moves the pipette positions further apart"""
+        # If they are less than 25% the width of the frame apart
+        if self.right_bottom_x - self.left_bottom_x < self.first_frame.shape[1] / 4:
+            self.left_bottom_x = self.left_bottom_x - 1
+            self.right_bottom_x = self.right_bottom_x + 1
+    
+    def move_left_pipette(self):
+        """Tilts the pipette left"""
+        # If angle is below 0.2
+        if self.pipette_angle < 0.2:
+            # Move the pipette left
+            self.pipette_angle = self.pipette_angle + 0.005
+    
+    def move_right_pipette(self):
+        """Tilts the pipette right"""
+        # If angle is above -0.2
+        if self.pipette_angle > -0.2:
+            # Move the pipette right
+            self.pipette_angle = self.pipette_angle - 0.005
+
+    def move_up_circle(self):
+        """Moves the circle up"""
+        # If particle_pos is within 10 pixels of the edge
+        if self.particle_pos[1] < self.first_frame.shape[0] - 10:
+            # Move the circle up
+            x, y = self.particle_pos
+            self.particle_pos = (x, y - 1)
+    
+    def move_down_circle(self):
+        """Moves the circle down"""
+        # If particle_pos is within 10 pixels of the edge
+        if self.particle_pos[1] > 10:
+            x, y = self.particle_pos
+            self.particle_pos = (x, y + 1)
+
+    def move_left_circle(self):
+        """Moves the circle left"""
+        # If particle_pos is within 10 pixels of the edge
+        if self.particle_pos[0] > 10:
+            # Move the circle left
+            x, y = self.particle_pos
+            self.particle_pos = (x - 1, y)
+    
+    def move_right_circle(self):
+        """Moves the circle right"""
+        # If particle_pos is within 10 pixels of the edge
+        if self.particle_pos[0] < self.first_frame.shape[1] - 10:
+            # Move the circle right
+            x, y = self.particle_pos
+            self.particle_pos = (x + 1, y)
+
+    def zoom_in_circle(self):
+        """Zoom in on the circle"""
+        # If radius is below 1/4 image size
+        if self.particle_radius < self.first_frame.shape[1] / 4:
+            # Zoom out on the circle
+            self.particle_radius = self.particle_radius + 1   
+
+    def zoom_out_circle(self):
+        """Zoom out on the circle"""
+        # If radius is above 5
+        if self.particle_radius > 5:
+            # Zoom out on the circle
+            self.particle_radius = self.particle_radius - 1
+         
+
+    def update_pos(self, pos):
+        """Takes a position (in terms of the original image) and updates the particle_pos
+        Assumes the position is valid"""
+        self.particle_pos = pos
+        
 
 
 class EventBox(Button):

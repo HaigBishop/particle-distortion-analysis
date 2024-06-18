@@ -224,6 +224,7 @@ class IE3Window(Screen):
             # Convert the image to a format useable for Kivy
             self.video_widget.texture = kivify_image(image)
     
+
     def update_current_frame(self):
         """Updates the current experiments current_frame attribute."""
         # If there is a current experiment
@@ -283,12 +284,13 @@ class IE3Window(Screen):
         else:
             print('issue !')
             new_value = 0.5
-        # Is it different to before?
-        new_value_is_same = new_value == self.video_slider.value
-        # Set actual value
-        self.video_slider.value = new_value
-        # Is it different to before?
-        if new_value_is_same:
+        # Find the difference between this new_value and the current value
+        diff = abs(new_value - self.video_slider.value)
+        # Is the new value significantly different?
+        new_value_is_diff = diff > 1 / (self.ion_view.width * 2.0)
+        if new_value_is_diff:
+            # Set actual value
+            self.video_slider.value = new_value
             # Update everything visually
             self.update_fields()
 
@@ -774,7 +776,14 @@ class IonCurrentView(Image):
         # If user clicked on the ion current view
         if self.collide_point(*pos):
             # Take position as proportion of widget width
-            self.video_slider.value = (pos[0] - self.x) / self.width
+            prop = (pos[0] - self.x) / self.width
+            # Find the difference between this new_value and the current value
+            diff = abs(prop - self.video_slider.value)
+            # Is the new value significantly different?
+            new_value_is_diff = diff > 1 / (self.width * 2.0)
+            if new_value_is_diff:
+                # Update slider
+                self.video_slider.value = prop
 
     def _on_touch_down(self, touch):
         """Called when touch down."""

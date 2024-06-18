@@ -15,7 +15,7 @@ from datetime import datetime
 import os
 
 # Import local modules
-from popup_elements import BackPopup
+from popup_elements import BackPopup, ErrorPopup
 from jobs import EventBox
 from file_management import is_experiment_json, load_experiment_json, kivify_image, is_video_file
 
@@ -33,9 +33,27 @@ class TD1Window(Screen):
     def on_predict(self):
         """called by pressing the 'Predict Start Point' button."""
         pass
+        # Check events
+        evt_errors = self.check_events()
+        # If there are issues
+        if evt_errors != []:
+            # Make pop up - alerts of invalid data
+            popup = ErrorPopup()
+            # Adjust the text on the popup
+            popup.error_label.text = "Invalid Data:\n" + "".join(evt_errors)
+            popup.open()
+        # If no issues with the data
+        else:
+            # Change screen to TD2
+            td2_window = self.app.root.get_screen("TD2")
+            self.app.root.current = "TD2"
+            self.app.root.transition.direction = "left"
+            # Load events (and run algorithm)
+            td2_window.load_events(predict_start=True)
 
     def check_events(self):
         return []
+        # WORK HEREEEEEEEEEEEEEEEEEEE
 
     def load_events(self, events=None):
         """Called by previous screen when migrating events over.

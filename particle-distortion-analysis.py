@@ -1,12 +1,16 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.2)
+Program: Particle Deformation Analysis (Version 0.2.3)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 18/01/2024
+Date: 18/06/2024
 Version Description:
-- new export frame button on TD1
-- new event info labels on TD1
+- new screen: TD2
+- makes (and displays) start prediction
+- z to zoom!
+- WASD + SHIFT to move predictions
+- instruction for this ^
+- scroll to scale the particle size
 """
 
 # Stops debug messages - also prevents an error after .exe building
@@ -42,6 +46,7 @@ from kivy.properties import ListProperty, ObjectProperty
 from ie1 import *
 from ie3 import *
 from td1 import *
+from td2 import *
 
 # Set background colour to grey
 DARK_GREY = (32 / 255, 33 / 255, 35 / 255, 1)
@@ -71,10 +76,13 @@ class WindowManager(ScreenManager):
         - send it to the current screen if needed"""
         # Decodes the key e.g. '241' -> 'e'
         key = Keyboard.keycode_to_string(Keyboard, keycode)
-        # If current window is x
-        if self.app.root.current == "":
-            # Call x
-            pass
+        # Get current screen
+        current_screen = self.app.root.current
+        # If current window is TD2
+        if current_screen in ["TD2"]:
+            # Send key down command to that screen
+            screen = self.app.root.get_screen(current_screen)
+            screen.on_key_down(key, modifiers)
         # Check if the 'shift' key is pressed down
         if key == "shift":
             # Shift key down
@@ -88,8 +96,8 @@ class WindowManager(ScreenManager):
         key = Keyboard.keycode_to_string(Keyboard, keycode)
         # Get current screen
         current_screen = self.app.root.current
-        # If current window is IE3
-        if current_screen == "IE3":
+        # If current window is IE3 or TD2
+        if current_screen in ["IE3", "TD2"]:
             # Send key up command to that screen
             screen = self.app.root.get_screen(current_screen)
             screen.on_key_up(key)
@@ -192,7 +200,7 @@ class PDAApp(App):
         # Get the current screen
         current_screen = self.root.current
         # If on a screen with an events list
-        if current_screen in ["TD1"]:
+        if current_screen in ["TD1", "TD2"]:
             # Call on_current_event for that evt list scrollview
             screen = self.root.get_screen(current_screen)
             screen.evt_scroll.on_current_event(instance, current_event)
@@ -279,7 +287,7 @@ class PDAApp(App):
         """Clears all events and event boxes from the current screen."""
         # If on a screen with an events list
         current_screen = self.root.current
-        if current_screen in ["TD1"]:
+        if current_screen in ["TD1", "TD2"]:
             # Get that screen's evt_scroll
             evt_scroll = self.root.get_screen(current_screen).evt_scroll
             # Clear both lists

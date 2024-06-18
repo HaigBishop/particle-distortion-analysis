@@ -163,7 +163,7 @@ def count_frames(video_loc):
         cap.release()
     return int(num_frames)
 
-def kivify_image(image):
+def kivify_image(image, resampling_method="linear"):
     """uses image to make kivy_image
     - image is a np array
     - kivy_image is a kivy compatible texture"""
@@ -174,6 +174,8 @@ def kivify_image(image):
         kivy_image = Texture.create(
             size=(image.shape[1], image.shape[0]), colorfmt="bgr"
         )
+        # Set magnification resampling method to either nearest or linear
+        kivy_image.mag_filter = resampling_method
         kivy_image.blit_buffer(
             image.tobytes(), colorfmt="bgr", bufferfmt="ubyte"
         )
