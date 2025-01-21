@@ -1,10 +1,10 @@
 <div align="center">
   <img src="./resources/icon.png" alt="PDA Logo" width="200"/>
-  <h1>Particle Distortion Analyzer (PDA)</h1>
+  <h1>Particle Distortion Analyser (PDA)</h1>
 </div>
 
 ## Overview
-A tool for tracking and analyzing particle distortion patterns.
+A tool for tracking and analysing particle distortion patterns.
 
 ## Features
 - Feature 1
