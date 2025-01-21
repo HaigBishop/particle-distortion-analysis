@@ -8,6 +8,95 @@ import cv2
 import numpy as np
 
 
+
+
+def get_y_maximums_multiple_frame_crops(images, smooth=False, starting_smooth_position=None, display=False):
+    """Takes a list of images and returns a list of y positions.
+    - if smooth is true, the y positions are smoothed simply by only allowing the y position to move up or down by 1 pixel."""
+    y_maximums = []
+    for image in images:
+        y_maximums.append(get_y_maximum_single_frame_crop(image, display=display))
+    if smooth:
+        if starting_smooth_position is None:
+            starting_smooth_position = y_maximums[0]
+        y_maximums = smooth_y_positions(y_maximums, starting_smooth_position)
+    return y_maximums
+
+def get_y_maximum_single_frame_crop(image, display=False):
+    """Takes one frame cropped at the top of the particle. 
+    - Purpose is to identify what y position the distortion gets to.
+    - Returns the y position of the distortion where 1 is the first (top) row of pixels.
+    - Weighs the columns of the pixels using a parabola so that the distortion is weighted more towards the middle of the image.
+    - The parabola is [y = -0.5x**2 + 1] where x is columns and y is weights
+    - x=0 is the centre of the image
+    - x=-1 and x=1 are the edges of the image
+    - before anything, we invert the image to get the negative
+    """
+    # If this image have a channel dimension, reduce it to 2D
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Invert the image (fixed to avoid overflow)
+    image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    image = 255 - image  # This is the safer way to invert uint8 images
+    
+    # Get the image dimensions
+    height, width = image.shape
+    # Create a new array to store the weights
+    weights = np.zeros((height, width))
+    # Iterate through each column
+    for x, x_idx in zip(np.linspace(-1, 1, width), range(width)):
+        # Calculate the weight for this column
+        weight = -0.5*x**2 + 1
+        # Add the weight to the array
+        weights[:, x_idx] = weight
+    # Apply the weights to the image
+    weighted_image = image.copy() * weights
+    # Calculate the brightness of each row
+    brightness = np.sum(weighted_image, axis=1)
+    # Find the y position of the maximum brightness
+    y_max = np.argmax(brightness)
+    
+    if display:
+        # Display the image
+        # Normalize images to 0-255 range for display
+        norm_image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        norm_weighted = cv2.normalize(weighted_image, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        norm_brightness = cv2.normalize(brightness, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        # Scale up the images 6x using nearest neighbour
+        norm_image = cv2.resize(norm_image, None, fx=12, fy=12, interpolation=cv2.INTER_NEAREST)
+        norm_weighted = cv2.resize(norm_weighted, None, fx=12, fy=12, interpolation=cv2.INTER_NEAREST)
+        norm_brightness = cv2.resize(norm_brightness, None, fx=12, fy=12, interpolation=cv2.INTER_NEAREST)
+        # Display the images
+        cv2.imshow('Image', norm_image)
+        cv2.imshow('Weighted Image', norm_weighted) 
+        cv2.imshow('Brightness', norm_brightness)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    # Return the y position
+    return y_max + 1
+
+def smooth_y_positions(y_positions, starting_smooth_position):
+    """Takes a list of y positions and returns a list of y positions.
+    - if smooth is true, the y positions are smoothed simply by only allowing the y position to move up or down by 1 pixel."""
+    smoothed_y_positions = []
+    for i in range(len(y_positions)):
+        # If this is the first position
+        if i == 0:
+            # Set the starting position
+            smoothed_y_positions.append(starting_smooth_position)
+        else:
+            # If the position is equal to the previous position, keep it
+            if y_positions[i] == smoothed_y_positions[-1]:
+                smoothed_y_positions.append(y_positions[i])
+            # If the position is greater than the previous position, move it up by 1 pixel
+            elif y_positions[i] > smoothed_y_positions[-1]:
+                smoothed_y_positions.append(smoothed_y_positions[-1] + 1)
+            # If the position is less than the previous position, move it down by 1 pixel
+            else:
+                smoothed_y_positions.append(smoothed_y_positions[-1] - 1)
+    return smoothed_y_positions
+
 def filter_circles_bbox(circles, bbox):
     """takes a list of circles (x, y, r) and a bounding box [x, y, x2, y2]'
     - returns a subset of the circles list

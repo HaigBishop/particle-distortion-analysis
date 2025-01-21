@@ -4,18 +4,17 @@
 </div>
 
 ## Overview
-A tool for tracking and analysing particle distortion patterns.
+Software for the analysis of micro aspiration data.
 
 ## Features
-- Feature 1
-- Feature 2
-- Feature 3
+- X
 
 ## Installation
 
 
 ## Usage
-Basic usage instructions and examples.
+X
 
 ## License
-[License information]
+X
+

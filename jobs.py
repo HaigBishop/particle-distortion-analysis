@@ -19,7 +19,7 @@ import cv2
 
 # Import local modules
 from file_management import read_vid, get_frame, count_frames, file_date, fft_and_filter, normalise_and_smooth_sig, align_sig_to_frames, read_tdms
-from tracking import detect_start
+from tracking import detect_start, get_y_maximums_multiple_frame_crops
 
 # Desired size to downsample signal data
 # raw data is not discarded, this is only used for display
@@ -257,10 +257,13 @@ class Event():
         self.experiment = experiment
         self.name = experiment.name + "_evt_" + str(id)
         # Video stuff
+        self.current_frame_num = first_frame_num
         self.first_frame_num = first_frame_num
         self.last_frame_num = last_frame_num
         self.num_frames = last_frame_num - first_frame_num + 1
         self.first_frame = get_frame(self.experiment.cap, first_frame_num)
+        # Avoid accessing this list directly, use the get_frame method instead, which uses frame numbering
+        self.all_frames = [get_frame(self.experiment.cap, i) for i in range(first_frame_num, last_frame_num)]
        
         # Ion current file
         self.ion_data = ion_data
@@ -271,6 +274,26 @@ class Event():
         self.pipette_angle = None
         self.left_bottom_x = None
         self.right_bottom_x = None
+        self.distortion_y_positions = None
+        self.crop_region = None
+
+    def get_frame(self, frame_num, direct_indexing=False):
+        """Returns the frame at the given frame number"""
+        # If frame_num is 'current', use the current frame number
+        if frame_num == 'current':
+            frame_num = self.current_frame_num
+        # If direct indexing is True, use the index directly
+        if direct_indexing:
+            idx = frame_num
+        # Otherwise, use the frame number
+        else:
+            idx = frame_num - self.first_frame_num
+        # If the index is out of bounds
+        if idx < 0 or idx >= len(self.all_frames):
+            # Throw an error
+            raise ValueError(f"Frame number is out of range for this event. Frame number: {frame_num}, Event range: {self.first_frame_num} to {self.last_frame_num}")
+        # Return the frame
+        return self.all_frames[idx]
 
     def predict_start(self):
         """Predict the position, angle, etc of the start point.
@@ -313,12 +336,45 @@ class Event():
         self.pipette_tip_centre_x = x_centre
         self.pipette_tip_slope = pipette_tip_slope
 
+    def track_distortion(self):
+        """Tracks the distortion of the particle"""
+        # Determine where to crop the images
+        num_radii_below_top_of_particle = 0.35
+        num_pixels_below_top_of_particle = int(num_radii_below_top_of_particle * self.particle_radius)
+        num_radii_above_particle = 0.35
+        num_pixels_above_centre_of_particle = int(self.particle_radius * (1 + num_radii_above_particle))
+        minimum_width_of_crop = 2
+        num_radii_for_width_of_crop = 0.15
 
+        # Calculate crop dimensions based on particle position and radius
+        top_y = max(0, int(self.particle_pos[1] - num_pixels_above_centre_of_particle))
+        bottom_y = min(self.first_frame.shape[0], int(self.particle_pos[1] - self.particle_radius + num_pixels_below_top_of_particle))
+        crop_width = max(minimum_width_of_crop, 
+                        int(self.particle_radius * num_radii_for_width_of_crop * 2))
+        left_x = max(0, int(self.particle_pos[0] - crop_width // 2))
+        right_x = min(self.first_frame.shape[1], int(self.particle_pos[0] + crop_width // 2))
+
+        # Get all cropped frames
+        cropped_frames = []
+        for frame in self.all_frames:
+            cropped = frame[top_y:bottom_y, left_x:right_x]
+            cropped_frames.append(cropped)
+
+        # Smoothing starts at the top of the particle (but in terms of the cropped image)
+        starting_smooth_position = int(num_radii_above_particle * self.particle_radius) + 1
+        # Use get_y_maximums_multiple_frame_crops to predict the distortion
+        # (y_maximums is a list of y positions, starting at 1 (top of cropped image) and goes to the bottom of the cropped image)
+        y_maximums = get_y_maximums_multiple_frame_crops(cropped_frames, smooth=True, 
+                                                         starting_smooth_position=starting_smooth_position, 
+                                                         display=False)
+
+        # Convert these positions to be relative to the uncropped frames and save as attributes
+        self.distortion_y_positions = [y + top_y - 1 for y in y_maximums]
+        self.crop_region = (top_y, bottom_y, left_x, right_x)
 
     def drawn_first_frame(self, zoomed, hidden=False):
         """Take the first frame, draw the position, angle, etc. Return it.
-        - the particle is simply a circle with position and radius given
-        - the pipette consists of two lines (angle given) and end at their bottom_x value."""
+        - made for TD2"""
         # Grab a copy of the first frame
         frame = self.first_frame.copy()
         # If not hidden
@@ -328,17 +384,8 @@ class Event():
                 cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), int(self.particle_radius), (0, 0, 255), 1)
                 # Draw the centre point of the particle
                 cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), 1, (0, 0, 255), 1)
-            # Draw the pipette
+            # Draw the pipette tip
             if self.pipette_angle is not None and self.left_bottom_x is not None and self.right_bottom_x is not None:
-                # # Get the height of the image
-                # height = self.first_frame.shape[0]
-                # # Draw 2 lines representing the pipette sides
-                # line_start = (int(self.left_bottom_x), int(0)) # Top of line
-                # line_end = (int(self.left_bottom_x + self.pipette_angle * height), int(height)) # Bottom of line
-                # cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
-                # line_start = (int(self.right_bottom_x), int(0)) # Top of line
-                # line_end = (int(self.right_bottom_x + self.pipette_angle * height), int(height)) # Bottom of line
-                # cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
                 # Draw the pipette tip line across the whole width using pipette_tip_centre_y and pipette_tip_slope
                 y_rise_half_width = (self.pipette_tip_slope * self.first_frame.shape[1])/2
                 left_xy = (int(0), int(self.pipette_tip_centre_y + y_rise_half_width))
@@ -371,8 +418,72 @@ class Event():
         # Return the frame
         return frame
 
-
-
+    def drawn_specific_frame(self, frame_num, zoomed, hidden=False):
+        """Draws a specific frame. 
+        Main difference to drawn_first_frame is that this is made for TD3, where the top line is also shown. """
+        if frame_num == 'current':
+            frame_num = self.current_frame_num
+        # Check frame_num is within the range of the event
+        if frame_num < self.first_frame_num or frame_num > self.last_frame_num:
+            # Raise an informative error
+            raise ValueError(f"Frame number is out of range for this event. Frame number: {frame_num}, Event range: {self.first_frame_num} to {self.last_frame_num}")
+        # Grab the frame (a copy)
+        frame = get_frame(self.experiment.cap, frame_num - 1).copy()
+        # If not hidden
+        if not hidden:
+            # Draw the particle
+            if self.particle_pos is not None and self.particle_radius is not None:
+                cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), int(self.particle_radius), (0, 0, 255), 1)
+                # Draw the centre point of the particle
+                cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), 1, (0, 0, 255), 1)
+            # # Draw the pipette tip
+            # if self.pipette_angle is not None and self.left_bottom_x is not None and self.right_bottom_x is not None:
+            #     # Draw the pipette tip line across the whole width using pipette_tip_centre_y and pipette_tip_slope
+            #     y_rise_half_width = (self.pipette_tip_slope * self.first_frame.shape[1])/2
+            #     left_xy = (int(0), int(self.pipette_tip_centre_y + y_rise_half_width))
+            #     right_xy = (int(self.first_frame.shape[1]), int(self.pipette_tip_centre_y - y_rise_half_width))
+            #     cv2.line(frame, left_xy, right_xy, (0, 0, 255), 1)
+            if self.distortion_y_positions is not None:
+                frame_index = frame_num - self.first_frame_num
+                if frame_index < len(self.distortion_y_positions):
+                    y_intercept = self.distortion_y_positions[frame_index]
+                    x_intercept = self.particle_tip_x
+                    slope = self.pipette_tip_slope
+                    # Make a line using this slope and this point that the line should pass through
+                    # Calculate points for line across whole frame width
+                    x1 = 0
+                    y1 = int(y_intercept - slope * (x_intercept - x1))
+                    x2 = frame.shape[1]
+                    y2 = int(y_intercept - slope * (x_intercept - x2))
+                    start_point = (x1, y1)
+                    end_point = (x2, y2)
+                    cv2.line(frame, start_point, end_point, (0, 0, 255), 1)
+        # Zoom by cropping the image centred on the circle
+        if zoomed:
+            # Get the centre of the circle
+            centre_x = int(self.particle_pos[0])
+            centre_y = int(self.particle_pos[1])
+            # Get the radius of the circle
+            radius = int(self.particle_radius)
+            # Get the size of the image
+            height, width = self.first_frame.shape[:2]
+            # Get the new size of the image and maintain aspect ratio
+            if height > width:
+                new_height = int(radius * 6 * (height / width))
+                new_width = int(radius * 6)
+            else:
+                new_height = int(radius * 6)
+                new_width = int(radius * 6 * (width / height))
+            # Get the new top left corner of the image
+            top_left_x = centre_x - int(new_width / 2)
+            top_left_y = centre_y - int(new_height / 2)
+            # Get the new bottom right corner of the image
+            bottom_right_x = centre_x + int(new_width / 2)
+            bottom_right_y = centre_y + int(new_height / 2)
+            # Crop the image
+            frame = frame[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
+        # Return the frame
+        return frame
 
     def move_down_pipette_tip(self):
         """Moves the pipette tip down"""
@@ -399,8 +510,6 @@ class Event():
         if self.pipette_tip_slope > -0.2:
             # Move the pipette right
             self.pipette_tip_slope = self.pipette_tip_slope - 0.005
-
-
 
     def move_up_circle(self):
         """Moves the circle up"""
@@ -447,12 +556,52 @@ class Event():
             # Zoom out on the circle
             self.particle_radius = self.particle_radius - 1
          
+    def move_distortion_up(self, frame_num='current'):
+        """Moves the distortion up"""
+        # If frame_num is 'current', use the current frame number
+        if frame_num == 'current':
+            frame_num = self.current_frame_num
+        # get the frame index
+        frame_index = frame_num - self.first_frame_num
+        # get the current y position
+        current_y = self.distortion_y_positions[frame_index]
+        # If the distortion is not at the top of the image
+        if current_y > 1:
+            # Move the distortion up
+            self.distortion_y_positions[frame_index] = current_y - 1
+
+    def move_distortion_down(self, frame_num='current'):
+        """Moves the distortion down"""
+        # If frame_num is 'current', use the current frame number
+        if frame_num == 'current':
+            frame_num = self.current_frame_num
+        # get the frame index
+        frame_index = frame_num - self.first_frame_num
+        # get the current y position
+        current_y = self.distortion_y_positions[frame_index]
+        # If the distortion is not at the bottom of the image
+        if current_y < self.first_frame.shape[0] - 1:
+            # Move the distortion down
+            self.distortion_y_positions[frame_index] = current_y + 1
 
     def update_pos(self, pos):
         """Takes a position (in terms of the original image) and updates the particle_pos
         Assumes the position is valid"""
         self.particle_pos = pos
-        
+
+    def previous_frame(self):
+        """Moves to the previous frame"""
+        # If the current frame number is greater than the first frame number
+        if self.current_frame_num > self.first_frame_num:
+            # Move to the previous frame
+            self.current_frame_num = self.current_frame_num - 1
+
+    def next_frame(self):
+        """Moves to the next frame"""
+        # If the current frame number is less than the last frame number
+        if self.current_frame_num < self.last_frame_num:
+            # Move to the next frame
+            self.current_frame_num = self.current_frame_num + 1
 
 
 class EventBox(Button):

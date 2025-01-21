@@ -1,14 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.5)
+Program: Particle Deformation Analysis (Version 0.2.6)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 Date: 21/01/2025
 Version Description:
-- revamp TD2 controls
-- X button to hide/show red circle and line
-- readme
-- couple bugs fixed
+ - TD3 Screen Mostly functional
 """
 
 # Stops debug messages - also prevents an error after .exe building
@@ -45,6 +42,7 @@ from ie1 import *
 from ie3 import *
 from td1 import *
 from td2 import *
+from td3 import *
 
 # Set background colour to grey
 DARK_GREY = (32 / 255, 33 / 255, 35 / 255, 1)
@@ -76,8 +74,8 @@ class WindowManager(ScreenManager):
         key = Keyboard.keycode_to_string(Keyboard, keycode)
         # Get current screen
         current_screen = self.app.root.current
-        # If current window is TD2
-        if current_screen in ["TD2"]:
+        # If current window is TD2, TD3
+        if current_screen in ["TD2", "TD3"]:
             # Send key down command to that screen
             screen = self.app.root.get_screen(current_screen)
             screen.on_key_down(key, modifiers)
@@ -94,8 +92,8 @@ class WindowManager(ScreenManager):
         key = Keyboard.keycode_to_string(Keyboard, keycode)
         # Get current screen
         current_screen = self.app.root.current
-        # If current window is IE3 or TD2
-        if current_screen in ["IE3", "TD2"]:
+        # If current window is IE3, TD2, TD3
+        if current_screen in ["IE3", "TD2", "TD3"]:
             # Send key up command to that screen
             screen = self.app.root.get_screen(current_screen)
             screen.on_key_up(key)
@@ -198,7 +196,7 @@ class PDAApp(App):
         # Get the current screen
         current_screen = self.root.current
         # If on a screen with an events list
-        if current_screen in ["TD1", "TD2"]:
+        if current_screen in ["TD1", "TD2", "TD3"]:
             # Call on_current_event for that evt list scrollview
             screen = self.root.get_screen(current_screen)
             screen.evt_scroll.on_current_event(instance, current_event)
@@ -285,7 +283,7 @@ class PDAApp(App):
         """Clears all events and event boxes from the current screen."""
         # If on a screen with an events list
         current_screen = self.root.current
-        if current_screen in ["TD1", "TD2"]:
+        if current_screen in ["TD1", "TD2", "TD3"]:
             # Get that screen's evt_scroll
             evt_scroll = self.root.get_screen(current_screen).evt_scroll
             # Clear both lists

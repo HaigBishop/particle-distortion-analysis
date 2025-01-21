@@ -74,6 +74,19 @@ class BackPopup(Popup):
                 to_screen.update_fields()
                 # Manually update is_selected for boxes
                 to_screen.evt_scroll.update_is_selected()
+            # If TD3 -> TD2
+            elif self.from_screen == 'TD3' and self.to_screen == 'TD2':
+                # Clear all events, but not their boxes
+                app.clear_events(boxes_only=True)
+                # Update the from screen
+                from_screen.update_fields()
+                # Change screen
+                app.root.current = self.to_screen
+                app.root.transition.direction = "right"
+                # Update the to screen
+                to_screen.update_fields()
+                # Manually update is_selected for boxes
+                to_screen.evt_scroll.update_is_selected()
         # Close popup
         self.dismiss()
 

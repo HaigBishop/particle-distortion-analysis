@@ -1,5 +1,5 @@
 """
-Module:  All classes related to Tracking Deformation Screen 2
+Module:  All classes related to Tracking Deformation Screen 3
 Program: Particle Deformation Analysis
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 """
@@ -9,23 +9,24 @@ from kivy.app import App
 from kivy.uix.screenmanager import Screen
 
 # Import modules
+from plyer import filechooser
 import cv2
 from datetime import datetime
 import os
 
 # Import local modules
-from popup_elements import BackPopup, ErrorPopup
+from popup_elements import BackPopup
 from jobs import EventBox
-from file_management import kivify_image
+from file_management import is_experiment_json, load_experiment_json, kivify_image, is_video_file
 
 
-class TD2Window(Screen):
+class TD3Window(Screen):
     """Tracking Deformation screen 1"""
 
     def __init__(self, **kwargs):
         """init method for TD2 screen"""
         # Call ScrollView init method
-        super(TD2Window, self).__init__(**kwargs)
+        super(TD3Window, self).__init__(**kwargs)
         # Save app as an attribute
         self.app = App.get_running_app()
         # Set attributes for zooming
@@ -33,30 +34,14 @@ class TD2Window(Screen):
         # When True, the red circle and line is hidden
         self.hidden = False
 
-    def on_track(self):
-        """called by pressing the 'Track Distortion' button."""
-        # Check events
-        evt_errors = self.check_events()
-        # If there are issues
-        if evt_errors != []:
-            # Make pop up - alerts of invalid data
-            popup = ErrorPopup()
-            # Adjust the text on the popup
-            popup.error_label.text = "Invalid Data:\n" + "".join(evt_errors)
-            popup.open()
-        # If no issues with the data
-        else:
-            # Change screen to TD3
-            td3_window = self.app.root.get_screen("TD3")
-            self.app.root.current = "TD3"
-            self.app.root.transition.direction = "left"
-            # Load events (and run algorithm)
-            td3_window.load_events(track_distortion=True)
+    def on_confirm(self):
+        """called by pressing the 'X' button."""
+        pass
 
     def check_events(self):
         return []
 
-    def load_events(self, predict_start=True, events=None):
+    def load_events(self, track_distortion=True, events=None):
         """Called by previous screen when migrating events over.
             Initialises evt boxes. Updates selection and visuals."""
         # If not explicitly defined, we will load all events 
@@ -72,9 +57,9 @@ class TD2Window(Screen):
         first_event = events[0] if len(events) > 0 else None
         self.app.select_event(first_event)
         # Predict the start points
-        if predict_start:
+        if track_distortion:
             for event in events:
-                event.predict_start()
+                event.track_distortion()
         # Update everything visually
         self.update_fields()
 
@@ -94,19 +79,21 @@ class TD2Window(Screen):
             self.frame_range_label.text = 'Frame range:  ' + str(current.first_frame_num) + ' - ' + str(current.last_frame_num)
             self.event_id_label.text = 'Event ID:  ' + str(current.id)
             self.update_image_preview()
+            self.frame_label.text = str(current.current_frame_num - current.first_frame_num + 1) + '/' + str(current.num_frames)
         else:
             # Reset with defaults
             self.location_label.text = "No event selected"
             self.frame_range_label.text = ""
             self.event_id_label.text = ""
             self.image_widget.texture = None
+            self.frame_label.text = ""
 
     def update_image_preview(self):
         # If there is a current event
         current = self.app.current_event
         if current is not None:
             # Draw the start point and pipette position etc. on the image
-            drawn_image = current.drawn_first_frame(zoomed=self.zoomed, hidden=self.hidden)
+            drawn_image = current.drawn_specific_frame('current', zoomed=self.zoomed, hidden=self.hidden)
             # Sometimes when first showing, the height lies and is too small, so...
             # If height is <100, we use nearest neighbour
             height = self.image_widget.height
@@ -123,13 +110,13 @@ class TD2Window(Screen):
         # If there are any events
         if len(self.app.events) > 0:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup(from_screen="TD2", to_screen="TD1")
+            popup = BackPopup(from_screen="TD3", to_screen="TD2")
             # Open it
             popup.open()
         # If there are not events
         else:
             # Make pop up - asks if you are sure you want to exit
-            popup = BackPopup(from_screen="TD2", to_screen="TD1")
+            popup = BackPopup(from_screen="TD3", to_screen="TD2")
             # THEN IMMEDIATELY CLOSE IT
             popup.on_answer("yes")
 
@@ -150,7 +137,7 @@ class TD2Window(Screen):
                 # If it doesn't exist, create it
                 os.makedirs(directory)
             # Get the image itself
-            image = current.first_frame
+            image = current.get_frame('current')
             # Combine all and write
             path = directory + name + "_capture" + date_extension + ".png"
             cv2.imwrite(path, image)
@@ -197,115 +184,37 @@ class TD2Window(Screen):
             elif is_arrow_key:
                 if key == 'up' or key == 'w':
                     # Up key
-                    if self.app.shift_is_down:
-                        # Shift + Up
-                        current.move_up_pipette_tip()
-                    else:
-                        # Up
-                        current.move_up_circle()
+                    current.move_distortion_up()
                 elif key == 'down' or key == 's':
                     # Down key
-                    if self.app.shift_is_down:
-                        # Shift + Down
-                        current.move_down_pipette_tip()
-                    else:
-                        # Down
-                        current.move_down_circle()
+                    current.move_distortion_down()
                 elif key == 'left' or key == 'a':
                     # Left key
-                    if self.app.shift_is_down:
-                        # Shift + Left
-                        current.tilt_left_pipette_tip()
-                    else:
-                        # Left
-                        current.move_left_circle()
+                    current.previous_frame()
+                    self.update_fields()
                 elif key == 'right' or key == 'd':
                     # Right key
-                    if self.app.shift_is_down:
-                        # Shift + Right
-                        current.tilt_right_pipette_tip()
-                    else:
-                        # Right
-                        current.move_right_circle()
+                    current.next_frame()
+                    self.update_fields()
                 self.update_image_preview()
 
-    def on_touch_move(self, touch):
-        """called when there is a 'touch movement'
-        - this includes things like click/drags and swipes"""
-        # If there is a current event
+    def on_left_arrow_press(self):
+        """Called when the left arrow is pressed"""
         current = self.app.current_event
         if current is not None:
-            # If the touch is within the image
-            if self.pos_in_image(touch.pos) and not self.zoomed:
-                # Update the circle position
-                current.update_pos(self.convert_pos(touch.pos))
-                # Update the image
-                self.update_image_preview()
-        # You have to return this because it is a Kivy method
-        return super().on_touch_down(touch)
+            current.previous_frame()
+            self.update_image_preview()
+            # Update everything visually
+            self.update_fields()
 
-    def on_touch_up(self, touch):
-        """this is called by all mouse up things. (e.g. left, right, middle scroll)"""
-        # If there is a current event
+    def on_right_arrow_press(self):
+        """Called when the right arrow is pressed"""
         current = self.app.current_event
         if current is not None:
-            # If it is a button (Kivy thing) and the touch is within the image
-            if "button" in touch.profile and self.pos_in_image(touch.pos):
-                # If a left click
-                if touch.button == "left":
-                    # Update the circle position
-                    current.update_pos(self.convert_pos(touch.pos))
-                else:
-                    # If a scroll up + not too big
-                    if touch.button == "scrollup":
-                        current.zoom_in_circle()
-                    # If a scroll down + not too small
-                    if touch.button == "scrolldown":
-                        current.zoom_out_circle()
-                # Update the image
-                self.update_image_preview()
-        # You have to return this because it is a Kivy method
-        return super().on_touch_down(touch)
-
-    def pos_in_image(self, pos):
-        """takes a position and returns True if it is within the image dimensions"""
-        # Unzip pos
-        x, y = pos
-        # Get image dimensions etc
-        norm_image_x = (self.image_widget.width - self.image_widget.norm_image_size[0]) / 2
-        norm_image_y = (
-            self.image_widget.height - self.image_widget.norm_image_size[1]) / 2
-        norm_image_x2 = norm_image_x + self.image_widget.norm_image_size[0]
-        norm_image_y2 = norm_image_y + self.image_widget.norm_image_size[1]
-        # True if the pos in in the image
-        is_in_image = (
-            x >= norm_image_x
-            and x <= norm_image_x2
-            and y >= norm_image_y
-            and y <= norm_image_y2
-        )
-        # If was within the image
-        return is_in_image
-
-    def convert_pos(self, pos):
-        """Takes a touch.pos and converts it to be in terms of the original image dimensions."""
-        current = self.app.current_event
-        # Unzip pos
-        x, y = pos
-        # Get image dimensions etc
-        norm_image_x = (self.image_widget.width - self.image_widget.norm_image_size[0]) / 2
-        norm_image_y = (
-            self.image_widget.height - self.image_widget.norm_image_size[1]) / 2
-        norm_image_x2 = norm_image_x + self.image_widget.norm_image_size[0]
-        norm_image_y2 = norm_image_y + self.image_widget.norm_image_size[1]
-        # Calculate pixel positions
-        img_prop_x = (x - norm_image_x) / (norm_image_x2 - norm_image_x)
-        img_prop_y = abs((y - norm_image_y) / (norm_image_y2 - norm_image_y) - 1)
-        pixel_x = int(img_prop_x * current.first_frame.shape[1])
-        pixel_y = int(img_prop_y * current.first_frame.shape[0])
-        # Return the pixel positions
-        return pixel_x, pixel_y
-
+            current.next_frame()
+            self.update_image_preview()
+            # Update everything visually
+            self.update_fields()
 
     def on_size(self, instance, value):
         """Used to update image whenever the screen changes size"""

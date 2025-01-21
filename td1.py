@@ -17,7 +17,7 @@ import os
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
 from jobs import EventBox
-from file_management import is_experiment_json, load_experiment_json, kivify_image, is_video_file
+from file_management import is_experiment_json, load_experiment_json, kivify_image
 
 
 class TD1Window(Screen):
