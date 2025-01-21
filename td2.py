@@ -31,6 +31,8 @@ class TD2Window(Screen):
         self.app = App.get_running_app()
         # Set attributes for zooming
         self.zoomed = False
+        # When True, the red circle and line is hidden
+        self.hidden = False
 
     def on_confirm(self):
         """called by pressing the 'X' button."""
@@ -89,9 +91,13 @@ class TD2Window(Screen):
         current = self.app.current_event
         if current is not None:
             # Draw the start point and pipette position etc. on the image
-            drawn_image = current.drawn_first_frame(zoomed=self.zoomed)
+            drawn_image = current.drawn_first_frame(zoomed=self.zoomed, hidden=self.hidden)
+            # Sometimes when first showing, the height lies and is too small, so...
+            # If height is <100, we use nearest neighbour
+            height = self.image_widget.height
+            bugger = height < 100
             # Resampling method is nearest neighbour if the image is enlargest a great deal
-            resample_method = 'nearest' if current.first_frame.shape[0] * 3 < self.image_widget.height or self.zoomed else 'linear'
+            resample_method = 'nearest' if current.first_frame.shape[0] * 1.5 < height or self.zoomed  or bugger else 'linear'
             # Convert the image to a format useable for Kivy
             self.image_widget.texture = kivify_image(drawn_image, resampling_method=resample_method)
 
@@ -148,6 +154,11 @@ class TD2Window(Screen):
                 # Zoom in
                 self.zoomed = True
                 self.update_image_preview()
+            # If the 'x' key is pressed down
+            elif key == "x" and self.hidden == False:
+                # Hide overlay
+                self.hidden = True
+                self.update_image_preview()
 
     def on_key_up(self, key):
         """called when a key is released up
@@ -163,12 +174,17 @@ class TD2Window(Screen):
                 self.zoomed = False
                 self.update_image_preview()
                 self.crop_bbox = None
+            # If the 'x' key is released (and currently hidden)
+            elif key == "x" and self.hidden == True:
+                # Show overlay
+                self.hidden = False
+                self.update_image_preview()
             elif is_arrow_key:
                 if key == 'up' or key == 'w':
                     # Up key
                     if self.app.shift_is_down:
                         # Shift + Up
-                        current.move_right_pipette()
+                        current.move_up_pipette_tip()
                     else:
                         # Up
                         current.move_up_circle()
@@ -176,7 +192,7 @@ class TD2Window(Screen):
                     # Down key
                     if self.app.shift_is_down:
                         # Shift + Down
-                        current.move_left_pipette()
+                        current.move_down_pipette_tip()
                     else:
                         # Down
                         current.move_down_circle()
@@ -184,7 +200,7 @@ class TD2Window(Screen):
                     # Left key
                     if self.app.shift_is_down:
                         # Shift + Left
-                        current.tilt_right_pipette()
+                        current.tilt_left_pipette_tip()
                     else:
                         # Left
                         current.move_left_circle()
@@ -192,7 +208,7 @@ class TD2Window(Screen):
                     # Right key
                     if self.app.shift_is_down:
                         # Shift + Right
-                        current.tilt_left_pipette()
+                        current.tilt_right_pipette_tip()
                     else:
                         # Right
                         current.move_right_circle()
@@ -227,22 +243,10 @@ class TD2Window(Screen):
                 else:
                     # If a scroll up + not too big
                     if touch.button == "scrollup":
-                        # If the shift key is down
-                        if self.app.shift_is_down:
-                            # Zoom in pipette
-                            current.zoom_in_pipette()
-                        else:
-                            # Increase radius
-                            current.zoom_in_circle()
+                        current.zoom_in_circle()
                     # If a scroll down + not too small
                     if touch.button == "scrolldown":
-                        # If the shift key is down
-                        if self.app.shift_is_down:
-                            # Zoom out pipette
-                            current.zoom_out_pipette()
-                        else:
-                            # Decrease radius
-                            current.zoom_out_circle()
+                        current.zoom_out_circle()
                 # Update the image
                 self.update_image_preview()
         # You have to return this because it is a Kivy method

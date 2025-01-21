@@ -277,32 +277,73 @@ class Event():
         Then, update those values so they can be displayed... or exported etc."""
         # Run the first frame through the algorithm
         particle_pos, particle_radius, pipette_angle, left_bottom_x, right_bottom_x = detect_start(self.first_frame, display=False)
-        # Update the values
+        # Update the values 
+        # These values were made for a different purpose unfortunately, but we are repurposing them :)
         self.particle_pos = particle_pos
         self.particle_radius = particle_radius
         self.pipette_angle = pipette_angle
         self.left_bottom_x = left_bottom_x
         self.right_bottom_x = right_bottom_x
+        # Calculate the slope of the pipette
+        # y is negative because the image is flipped
+        height = self.first_frame.shape[0]
+        line_start = (int(self.left_bottom_x), int(-0)) # Top of line
+        line_end = (int(self.left_bottom_x + self.pipette_angle * height), int(-height)) # Bottom of line
+        # This slop is the slope of the lines running along the length of the pipette
+        slope = (line_start[1] - line_end[1]) / (line_start[0] - line_end[0])
+        # This slope is the slope of the line running along the bottom of the pipette at the tip (the width of the pipette)
+        pipette_tip_slope = -1/slope
+        # This point is the point of the particle furthest into the pipette but still on the edge of the perfect circle
+        # Calculate angle from slope (arctan gives angle in radians)
+        angle = np.arctan(slope)
+        # Calculate the offset from particle_pos using trigonometry
+        x_offset = self.particle_radius * np.cos(angle)
+        y_offset = self.particle_radius * np.sin(angle)
+        # Calculate the tip coordinates
+        particle_tip_x = self.particle_pos[0] + x_offset
+        particle_tip_y = self.particle_pos[1] - y_offset # Negative because the image is flipped
+        # Given the line made by the particle tip and the pipette_tip_slope, calculate y value on this line at x_centre
+        x_centre = self.first_frame.shape[1] / 2
+        whyy = pipette_tip_slope * (x_centre - particle_tip_x)
+        pipette_tip_centre_y = particle_tip_y - whyy # Negative because the image is flipped
+        pipette_tip_centre_y += 10 # We move down by 10 because it is always an overshoot (due to repurposing)
+        self.particle_tip_x = particle_tip_x
+        self.particle_tip_y = particle_tip_y
+        self.pipette_tip_centre_y = pipette_tip_centre_y
+        self.pipette_tip_centre_x = x_centre
+        self.pipette_tip_slope = pipette_tip_slope
 
-    def drawn_first_frame(self, zoomed):
+
+
+    def drawn_first_frame(self, zoomed, hidden=False):
         """Take the first frame, draw the position, angle, etc. Return it.
         - the particle is simply a circle with position and radius given
         - the pipette consists of two lines (angle given) and end at their bottom_x value."""
-        # Draw the particle
+        # Grab a copy of the first frame
         frame = self.first_frame.copy()
-        if self.particle_pos is not None and self.particle_radius is not None:
-            cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), int(self.particle_radius), (0, 0, 255), 1)
-        # Draw the pipette
-        if self.pipette_angle is not None and self.left_bottom_x is not None and self.right_bottom_x is not None:
-            # Get the height of the image
-            height = self.first_frame.shape[0]
-            # Draw 2 lines representing the pipette sides
-            line_start = (int(self.left_bottom_x), int(0))
-            line_end = (int(self.left_bottom_x + self.pipette_angle * height), int(height))
-            cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
-            line_start = (int(self.right_bottom_x), int(0))
-            line_end = (int(self.right_bottom_x + self.pipette_angle * height), int(height))
-            cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
+        # If not hidden
+        if not hidden:
+            # Draw the particle
+            if self.particle_pos is not None and self.particle_radius is not None:
+                cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), int(self.particle_radius), (0, 0, 255), 1)
+                # Draw the centre point of the particle
+                cv2.circle(frame, (int(self.particle_pos[0]), int(self.particle_pos[1])), 1, (0, 0, 255), 1)
+            # Draw the pipette
+            if self.pipette_angle is not None and self.left_bottom_x is not None and self.right_bottom_x is not None:
+                # # Get the height of the image
+                # height = self.first_frame.shape[0]
+                # # Draw 2 lines representing the pipette sides
+                # line_start = (int(self.left_bottom_x), int(0)) # Top of line
+                # line_end = (int(self.left_bottom_x + self.pipette_angle * height), int(height)) # Bottom of line
+                # cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
+                # line_start = (int(self.right_bottom_x), int(0)) # Top of line
+                # line_end = (int(self.right_bottom_x + self.pipette_angle * height), int(height)) # Bottom of line
+                # cv2.line(frame, line_start, line_end, (0, 0, 255), 1)
+                # Draw the pipette tip line across the whole width using pipette_tip_centre_y and pipette_tip_slope
+                y_rise_half_width = (self.pipette_tip_slope * self.first_frame.shape[1])/2
+                left_xy = (int(0), int(self.pipette_tip_centre_y + y_rise_half_width))
+                right_xy = (int(self.first_frame.shape[1]), int(self.pipette_tip_centre_y - y_rise_half_width))
+                cv2.line(frame, left_xy, right_xy, (0, 0, 255), 1)
         # Zoom by cropping the image centred on the circle
         if zoomed:
             # Get the centre of the circle
@@ -329,51 +370,37 @@ class Event():
             frame = frame[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
         # Return the frame
         return frame
-    
-    def zoom_in_pipette(self):
-        """Simply moves the pipette positions closer together"""
-        # If they are more than 5 pixels apart
-        if self.right_bottom_x - self.left_bottom_x > 5:
-            # Move the pipette closer together
-            self.left_bottom_x = self.left_bottom_x + 1
-            self.right_bottom_x = self.right_bottom_x - 1
-    
-    def zoom_out_pipette(self):
-        """Simply moves the pipette positions further apart"""
-        # If they are less than 50% the width of the frame apart
-        if self.right_bottom_x - self.left_bottom_x < self.first_frame.shape[1] / 2:
-            self.left_bottom_x = self.left_bottom_x - 1
-            self.right_bottom_x = self.right_bottom_x + 1
 
-    def move_left_pipette(self):
-        """Moves the pipette left"""
-        # If left_bottom_x is within 10 pixels of the edge to prevent going out of bounds
-        if self.left_bottom_x > 10:
-            # Move the pipette left by adjusting both ends
-            self.left_bottom_x = self.left_bottom_x - 1
-            self.right_bottom_x = self.right_bottom_x - 1
 
-    def move_right_pipette(self):
-        """Moves the pipette right"""
-        # If right_bottom_x is within 10 pixels of the edge to prevent going out of bounds
-        if self.right_bottom_x < self.first_frame.shape[1] - 10:
-            # Move the pipette right by adjusting both ends
-            self.left_bottom_x = self.left_bottom_x + 1
-            self.right_bottom_x = self.right_bottom_x + 1
 
-    def tilt_left_pipette(self):
-        """Tilts the pipette left"""
+
+    def move_down_pipette_tip(self):
+        """Moves the pipette tip down"""
+        # If pipette_tip_centre_y is within 10 pixels of the edge to prevent going out of bounds
+        if self.pipette_tip_centre_y < self.first_frame.shape[0] - 10:
+            self.pipette_tip_centre_y = self.pipette_tip_centre_y + 1
+
+    def move_up_pipette_tip(self):
+        """Moves the pipette tip up"""
+        # If pipette_tip_centre_y is within 10 pixels of the edge to prevent going out of bounds
+        if self.pipette_tip_centre_y > 10:
+            self.pipette_tip_centre_y = self.pipette_tip_centre_y - 1
+
+    def tilt_left_pipette_tip(self):
+        """Tilts the pipette tip left"""
         # If angle is below 0.2
-        if self.pipette_angle < 0.2:
+        if self.pipette_tip_slope < 0.2:
             # Move the pipette left
-            self.pipette_angle = self.pipette_angle + 0.005
+            self.pipette_tip_slope = self.pipette_tip_slope + 0.005
     
-    def tilt_right_pipette(self):
-        """Tilts the pipette right"""
+    def tilt_right_pipette_tip(self):
+        """Tilts the pipette tip right"""
         # If angle is above -0.2
-        if self.pipette_angle > -0.2:
+        if self.pipette_tip_slope > -0.2:
             # Move the pipette right
-            self.pipette_angle = self.pipette_angle - 0.005
+            self.pipette_tip_slope = self.pipette_tip_slope - 0.005
+
+
 
     def move_up_circle(self):
         """Moves the circle up"""

@@ -1,11 +1,14 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.4)
+Program: Particle Deformation Analysis (Version 0.2.5)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 Date: 21/01/2025
 Version Description:
-- improve TD2 controls
+- revamp TD2 controls
+- X button to hide/show red circle and line
+- readme
+- couple bugs fixed
 """
 
 # Stops debug messages - also prevents an error after .exe building
@@ -150,7 +153,7 @@ class PDAApp(App):
         # Label window
         self.title = "Particle Deformation Analysis"
         # Set app icon
-        self.icon = "resources\\icon.png"
+        self.icon = "resources\\icon_128x128.png"
         # Bind the file drop call
         Window.bind(on_drop_file=self._on_file_drop)
 
