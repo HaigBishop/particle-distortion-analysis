@@ -332,27 +332,43 @@ class Event():
     
     def zoom_in_pipette(self):
         """Simply moves the pipette positions closer together"""
-        # If they are more than 10 pixels apart
-        if self.right_bottom_x - self.left_bottom_x > 10:
+        # If they are more than 5 pixels apart
+        if self.right_bottom_x - self.left_bottom_x > 5:
             # Move the pipette closer together
             self.left_bottom_x = self.left_bottom_x + 1
             self.right_bottom_x = self.right_bottom_x - 1
     
     def zoom_out_pipette(self):
         """Simply moves the pipette positions further apart"""
-        # If they are less than 25% the width of the frame apart
-        if self.right_bottom_x - self.left_bottom_x < self.first_frame.shape[1] / 4:
+        # If they are less than 50% the width of the frame apart
+        if self.right_bottom_x - self.left_bottom_x < self.first_frame.shape[1] / 2:
             self.left_bottom_x = self.left_bottom_x - 1
             self.right_bottom_x = self.right_bottom_x + 1
-    
+
     def move_left_pipette(self):
+        """Moves the pipette left"""
+        # If left_bottom_x is within 10 pixels of the edge to prevent going out of bounds
+        if self.left_bottom_x > 10:
+            # Move the pipette left by adjusting both ends
+            self.left_bottom_x = self.left_bottom_x - 1
+            self.right_bottom_x = self.right_bottom_x - 1
+
+    def move_right_pipette(self):
+        """Moves the pipette right"""
+        # If right_bottom_x is within 10 pixels of the edge to prevent going out of bounds
+        if self.right_bottom_x < self.first_frame.shape[1] - 10:
+            # Move the pipette right by adjusting both ends
+            self.left_bottom_x = self.left_bottom_x + 1
+            self.right_bottom_x = self.right_bottom_x + 1
+
+    def tilt_left_pipette(self):
         """Tilts the pipette left"""
         # If angle is below 0.2
         if self.pipette_angle < 0.2:
             # Move the pipette left
             self.pipette_angle = self.pipette_angle + 0.005
     
-    def move_right_pipette(self):
+    def tilt_right_pipette(self):
         """Tilts the pipette right"""
         # If angle is above -0.2
         if self.pipette_angle > -0.2:

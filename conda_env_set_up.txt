@@ -1,0 +1,9 @@
+
+
+
+conda create -n pda_env -y
+conda activate pda_env
+
+conda install -c conda-forge kivy opencv numpy scipy moviepy plyer pywin32 -y
+pip install nptdms
+

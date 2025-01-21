@@ -168,7 +168,7 @@ class TD2Window(Screen):
                     # Up key
                     if self.app.shift_is_down:
                         # Shift + Up
-                        current.zoom_in_pipette()
+                        current.move_right_pipette()
                     else:
                         # Up
                         current.move_up_circle()
@@ -176,7 +176,7 @@ class TD2Window(Screen):
                     # Down key
                     if self.app.shift_is_down:
                         # Shift + Down
-                        current.zoom_out_pipette()
+                        current.move_left_pipette()
                     else:
                         # Down
                         current.move_down_circle()
@@ -184,7 +184,7 @@ class TD2Window(Screen):
                     # Left key
                     if self.app.shift_is_down:
                         # Shift + Left
-                        current.move_left_pipette()
+                        current.tilt_right_pipette()
                     else:
                         # Left
                         current.move_left_circle()
@@ -192,7 +192,7 @@ class TD2Window(Screen):
                     # Right key
                     if self.app.shift_is_down:
                         # Shift + Right
-                        current.move_right_pipette()
+                        current.tilt_left_pipette()
                     else:
                         # Right
                         current.move_right_circle()
@@ -227,12 +227,22 @@ class TD2Window(Screen):
                 else:
                     # If a scroll up + not too big
                     if touch.button == "scrollup":
-                        # Increase radius
-                        current.zoom_in_circle()
+                        # If the shift key is down
+                        if self.app.shift_is_down:
+                            # Zoom in pipette
+                            current.zoom_in_pipette()
+                        else:
+                            # Increase radius
+                            current.zoom_in_circle()
                     # If a scroll down + not too small
                     if touch.button == "scrolldown":
-                        # Decrease radius
-                        current.zoom_out_circle()
+                        # If the shift key is down
+                        if self.app.shift_is_down:
+                            # Zoom out pipette
+                            current.zoom_out_pipette()
+                        else:
+                            # Decrease radius
+                            current.zoom_out_circle()
                 # Update the image
                 self.update_image_preview()
         # You have to return this because it is a Kivy method

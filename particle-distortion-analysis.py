@@ -1,16 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.3)
+Program: Particle Deformation Analysis (Version 0.2.4)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 18/06/2024
+Date: 21/01/2025
 Version Description:
-- new screen: TD2
-- makes (and displays) start prediction
-- z to zoom!
-- WASD + SHIFT to move predictions
-- instruction for this ^
-- scroll to scale the particle size
+- improve TD2 controls
 """
 
 # Stops debug messages - also prevents an error after .exe building
