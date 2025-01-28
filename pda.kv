@@ -1393,6 +1393,7 @@ WindowManager:
     param_grid_layout: param_grid_layout
     image_widget: image_widget
     frame_label: frame_label
+    maintain_nondecreasing_checkbox: maintain_nondecreasing_checkbox
     GridLayout:
         canvas:
             Color:
@@ -1530,6 +1531,26 @@ WindowManager:
                                 halign: 'left'
                                 opacity: 0
                             Button:
+                                text:'◀'
+                                font_name: 'resources\\Inter.ttf'
+                                font_size: '18dp'
+                                size_hint: (None, None)
+                                size: '40dp', '40dp'
+                                pos_hint: {'center_x':0.3, 'center_y': 0.5}
+                                background_color: 0, 0, 0, 0
+                                color: TANGY
+                                on_press: root.on_left_play_to_end_press()
+                            Button:
+                                text:'⇐'
+                                font_name: 'resources\\Inter.ttf'
+                                font_size: '24dp'
+                                size_hint: (None, None)
+                                size: '40dp', '40dp'
+                                pos_hint: {'center_x':0.35, 'center_y': 0.5}
+                                background_color: 0, 0, 0, 0
+                                color: TANGY
+                                on_press: root.on_left_arrow_press(num_frames=0.05)
+                            Button:
                                 text:'←'
                                 font_name: 'resources\\Inter.ttf'
                                 font_size: '24dp'
@@ -1557,6 +1578,46 @@ WindowManager:
                                 background_color: 0, 0, 0, 0
                                 color: TANGY
                                 on_press: root.on_right_arrow_press()
+                            Button:
+                                text:'⇒'
+                                font_name: 'resources\\Inter.ttf'
+                                font_size: '24dp'
+                                size_hint: (None, None)
+                                size: '40dp', '40dp'
+                                pos_hint: {'center_x':0.65, 'center_y': 0.5}
+                                background_color: 0, 0, 0, 0
+                                color: TANGY
+                                on_press: root.on_right_arrow_press(num_frames=0.05)
+                            Button:
+                                text:'▶'
+                                font_name: 'resources\\Inter.ttf'
+                                font_size: '18dp'
+                                size_hint: (None, None)
+                                size: '40dp', '40dp'
+                                pos_hint: {'center_x':0.7, 'center_y': 0.5}
+                                background_color: 0, 0, 0, 0
+                                color: TANGY
+                                on_press: root.on_right_play_to_end_press()
+                            GridLayout:
+                                cols: 2
+                                size_hint: (None, None)
+                                size: ('270dp', '35dp')
+                                pos_hint: {'center_x':0.95, 'center_y': 0.5}
+                                CheckBox:
+                                    id: maintain_nondecreasing_checkbox
+                                    active: True
+                                    size_hint: (None, None)
+                                    size: ('35dp', '35dp')
+                                Label:
+                                    text: 'Maintain Non-decreasing'
+                                    size_hint: (None, None)
+                                    size: ('135dp', '35dp')
+                                    font_name: 'resources\\Inter.ttf'
+                                    color: WHITE
+                                    font_size: '10dp'
+                                    valign: 'center'
+                                    halign: 'left'
+                                    text_size: self.size
         FloatLayout:
             size_hint_x: 0.02
         GridLayout:
@@ -1910,6 +1971,7 @@ WindowManager:
         x: 0 if root.app.current_experiment != None and root.app.current_has_ion else 69420
         width: root.x
         height: root.height
+
 
 
 

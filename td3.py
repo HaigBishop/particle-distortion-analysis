@@ -7,6 +7,7 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 # Kivy imports
 from kivy.app import App
 from kivy.uix.screenmanager import Screen
+from kivy.clock import Clock
 
 # Import modules
 from plyer import filechooser
@@ -18,6 +19,9 @@ import os
 from popup_elements import BackPopup
 from jobs import EventBox
 from file_management import is_experiment_json, load_experiment_json, kivify_image, is_video_file
+
+# Animation duration for play to end/start (seconds)
+ANIMATION_DURATION = 1.5 
 
 
 class TD3Window(Screen):
@@ -184,10 +188,10 @@ class TD3Window(Screen):
             elif is_arrow_key:
                 if key == 'up' or key == 'w':
                     # Up key
-                    current.move_distortion_up()
+                    current.move_distortion_up(maintain_nondecreasing=self.maintain_nondecreasing_checkbox.active)
                 elif key == 'down' or key == 's':
                     # Down key
-                    current.move_distortion_down()
+                    current.move_distortion_down(maintain_nondecreasing=self.maintain_nondecreasing_checkbox.active)
                 elif key == 'left' or key == 'a':
                     # Left key
                     current.previous_frame()
@@ -198,20 +202,74 @@ class TD3Window(Screen):
                     self.update_fields()
                 self.update_image_preview()
 
-    def on_left_arrow_press(self):
-        """Called when the left arrow is pressed"""
+    def on_left_arrow_press(self, num_frames=1):
+        """Called when the left arrow is pressed
+        - if num_frames is between 0 and 1, it is interpreted as a fraction of the total number of frames
+        """
         current = self.app.current_event
         if current is not None:
-            current.previous_frame()
+            # If num_frames is between 0 and 1
+            if 0 < num_frames < 1:
+                # Interpret as a fraction of the total number of frames
+                num_frames = int(num_frames * current.num_frames)
+            # Call previous frame num_frames times
+            for _ in range(num_frames):
+                current.previous_frame()
             self.update_image_preview()
             # Update everything visually
             self.update_fields()
 
-    def on_right_arrow_press(self):
-        """Called when the right arrow is pressed"""
+    def on_right_arrow_press(self, num_frames=1):
+        """Called when the right arrow is pressed
+        - if num_frames is between 0 and 1, it is interpreted as a fraction of the total number of frames
+        """
         current = self.app.current_event
         if current is not None:
-            current.next_frame()
+            # If num_frames is between 0 and 1
+            if 0 < num_frames < 1:
+                # Interpret as a fraction of the total number of frames
+                num_frames = int(num_frames * current.num_frames)
+            # Call next frame num_frames times
+            for _ in range(num_frames):
+                current.next_frame()
+            self.update_image_preview()
+            # Update everything visually
+            self.update_fields()
+
+    def on_left_play_to_end_press(self):
+        """Called when the left play to end button is pressed"""
+        current = self.app.current_event
+        if current is not None:
+            animation_duration = ANIMATION_DURATION # seconds
+            n_frames = current.num_frames + 2 # +2 as overkill just incase
+            delay_per_frame = animation_duration / n_frames
+            # Call previous frame n_frames times with a delay of delay_per_frame seconds
+            def update_frame(dt):
+                current.previous_frame()
+                self.update_image_preview()
+                self.update_fields()
+            # Schedule the frame updates
+            for i in range(n_frames):
+                Clock.schedule_once(update_frame, i * delay_per_frame)
+            self.update_image_preview()
+            # Update everything visually
+            self.update_fields()
+
+    def on_right_play_to_end_press(self):
+        """Called when the right play to end button is pressed"""
+        current = self.app.current_event
+        if current is not None:
+            animation_duration = ANIMATION_DURATION # seconds
+            n_frames = current.num_frames + 2 # +2 as overkill just incase
+            delay_per_frame = animation_duration / n_frames
+            # Call next frame n_frames times with a delay of delay_per_frame seconds
+            def update_frame(dt):
+                current.next_frame()
+                self.update_image_preview()
+                self.update_fields()
+            # Schedule the frame updates
+            for i in range(n_frames):
+                Clock.schedule_once(update_frame, i * delay_per_frame)
             self.update_image_preview()
             # Update everything visually
             self.update_fields()

@@ -263,7 +263,7 @@ class Event():
         self.num_frames = last_frame_num - first_frame_num + 1
         self.first_frame = get_frame(self.experiment.cap, first_frame_num)
         # Avoid accessing this list directly, use the get_frame method instead, which uses frame numbering
-        self.all_frames = [get_frame(self.experiment.cap, i) for i in range(first_frame_num, last_frame_num)]
+        self.all_frames = [get_frame(self.experiment.cap, i) for i in range(first_frame_num, last_frame_num + 1)]
        
         # Ion current file
         self.ion_data = ion_data
@@ -341,7 +341,7 @@ class Event():
         # Determine where to crop the images
         num_radii_below_top_of_particle = 0.35
         num_pixels_below_top_of_particle = int(num_radii_below_top_of_particle * self.particle_radius)
-        num_radii_above_particle = 0.35
+        num_radii_above_particle = 0.55
         num_pixels_above_centre_of_particle = int(self.particle_radius * (1 + num_radii_above_particle))
         minimum_width_of_crop = 2
         num_radii_for_width_of_crop = 0.15
@@ -364,7 +364,7 @@ class Event():
         starting_smooth_position = int(num_radii_above_particle * self.particle_radius) + 1
         # Use get_y_maximums_multiple_frame_crops to predict the distortion
         # (y_maximums is a list of y positions, starting at 1 (top of cropped image) and goes to the bottom of the cropped image)
-        y_maximums = get_y_maximums_multiple_frame_crops(cropped_frames, smooth=True, 
+        y_maximums = get_y_maximums_multiple_frame_crops(cropped_frames, smooth=True, non_decreasing=True, 
                                                          starting_smooth_position=starting_smooth_position, 
                                                          display=False)
 
@@ -556,7 +556,7 @@ class Event():
             # Zoom out on the circle
             self.particle_radius = self.particle_radius - 1
          
-    def move_distortion_up(self, frame_num='current'):
+    def move_distortion_up(self, frame_num='current', maintain_nondecreasing=False):
         """Moves the distortion up"""
         # If frame_num is 'current', use the current frame number
         if frame_num == 'current':
@@ -567,10 +567,21 @@ class Event():
         current_y = self.distortion_y_positions[frame_index]
         # If the distortion is not at the top of the image
         if current_y > 1:
+            new_y = current_y - 1
             # Move the distortion up
-            self.distortion_y_positions[frame_index] = current_y - 1
+            self.distortion_y_positions[frame_index] = new_y
+            # If maintain_nondecreasing
+            if maintain_nondecreasing:
+                # Get the next frame index
+                next_frame_index = frame_index + 1
+                # While the new y position is less than the next frame y position
+                while next_frame_index in range(len(self.distortion_y_positions)) and new_y < self.distortion_y_positions[next_frame_index]:
+                    # Make the distortion match
+                    self.distortion_y_positions[next_frame_index] = new_y
+                    # Get the next frame index
+                    next_frame_index += 1
 
-    def move_distortion_down(self, frame_num='current'):
+    def move_distortion_down(self, frame_num='current', maintain_nondecreasing=False):
         """Moves the distortion down"""
         # If frame_num is 'current', use the current frame number
         if frame_num == 'current':
@@ -581,8 +592,20 @@ class Event():
         current_y = self.distortion_y_positions[frame_index]
         # If the distortion is not at the bottom of the image
         if current_y < self.first_frame.shape[0] - 1:
+            new_y = current_y + 1
             # Move the distortion down
-            self.distortion_y_positions[frame_index] = current_y + 1
+            self.distortion_y_positions[frame_index] = new_y
+            # If maintain_nondecreasing
+            if maintain_nondecreasing:
+                # Get the prev frame index
+                prev_frame_index = frame_index - 1
+                # While the new y position is greater than the prev frame y position
+                while prev_frame_index in range(len(self.distortion_y_positions)) and new_y > self.distortion_y_positions[prev_frame_index]:
+                    # Make the distortion match
+                    self.distortion_y_positions[prev_frame_index] = new_y
+                    # Get the prev frame index
+                    prev_frame_index -= 1
+
 
     def update_pos(self, pos):
         """Takes a position (in terms of the original image) and updates the particle_pos

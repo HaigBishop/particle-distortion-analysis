@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-def get_y_maximums_multiple_frame_crops(images, smooth=False, starting_smooth_position=None, display=False):
+def get_y_maximums_multiple_frame_crops(images, smooth=False, non_decreasing=False, starting_smooth_position=None, display=False):
     """Takes a list of images and returns a list of y positions.
     - if smooth is true, the y positions are smoothed simply by only allowing the y position to move up or down by 1 pixel."""
     y_maximums = []
@@ -20,6 +20,9 @@ def get_y_maximums_multiple_frame_crops(images, smooth=False, starting_smooth_po
         if starting_smooth_position is None:
             starting_smooth_position = y_maximums[0]
         y_maximums = smooth_y_positions(y_maximums, starting_smooth_position)
+
+    if non_decreasing:
+        y_maximums = non_decreasing_y_positions(y_maximums)
     return y_maximums
 
 def get_y_maximum_single_frame_crop(image, display=False):
@@ -96,6 +99,21 @@ def smooth_y_positions(y_positions, starting_smooth_position):
             else:
                 smoothed_y_positions.append(smoothed_y_positions[-1] - 1)
     return smoothed_y_positions
+
+def non_decreasing_y_positions(y_positions):
+    """Takes a list of y positions and returns a list where each value is at least
+    as large as the previous value. If a value is lower than the previous, it is
+    set equal to the previous value.
+    
+    IMPORTANT: the Y-axis is inverted in the cropped images, so this function
+    actually makes the y-positions non-increasing."""
+    result = y_positions.copy()  # Create a copy to avoid modifying the input
+    for i in range(1, len(result)):
+        # If current value is greater than previous (remember y-axis is inverted)
+        # we set it equal to the previous value to maintain non-increasing sequence
+        if result[i] > result[i-1]:
+            result[i] = result[i-1]
+    return result
 
 def filter_circles_bbox(circles, bbox):
     """takes a list of circles (x, y, r) and a bounding box [x, y, x2, y2]'

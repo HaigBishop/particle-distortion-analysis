@@ -1,11 +1,15 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.6)
+Program: Particle Deformation Analysis (Version 0.2.7)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
-Date: 21/01/2025
+Date: 29/01/2025
 Version Description:
- - TD3 Screen Mostly functional
+ - Fix last frame bug
+ - non-decreasing y-positions
+ - double arrow to move 5% of total frames
+ - play to end/start animations
+ - non-decreasing checkbox
 """
 
 # Stops debug messages - also prevents an error after .exe building
@@ -21,8 +25,8 @@ kivy.require("2.2.0")
 from kivy.config import Config
 
 # Set window size
-Config.set("graphics", "width", "900")
-Config.set("graphics", "height", "600")
+Config.set("graphics", "width", "1200")
+Config.set("graphics", "height", "800")
 # Set min window size
 Config.set("graphics", "minimum_width", "750")
 Config.set("graphics", "minimum_height", "500")
