@@ -92,7 +92,7 @@ WindowManager:
                         x: title_label.x + title_label.width
                 # Subtitle
                 Label:
-                    text: ' Haig Bishop,  hbi34@uclive.ac.nz,  University of Canterbury'
+                    text: ' Haig Bishop,  haig.bishop@pg.canterbury.ac.nz,  University of Canterbury'
                     font_name: 'resources\\Inter.ttf'
                     font_size: '12dp'
                     size_hint_x: 1
@@ -164,22 +164,22 @@ WindowManager:
                             root.manager.transition.direction = 'left'
                 FloatLayout:
                     size_hint_y: 0.25
-                    TangyButton:
-                        id: btn_pf
-                        font_name: 'resources\\Inter.ttf'
-                        text: 'Fit Deformation/Current Models' # 'Deformation → Force'
-                        font_size:'30dp'
-                        size_hint: (1, 0.9)
-                        pos_hint: {'right': 1, 'top':1}
+                    # TangyButton:
+                    #     id: btn_pf
+                    #     font_name: 'resources\\Inter.ttf'
+                    #     text: 'Fit Deformation/Current Models' # 'Deformation → Force'
+                    #     font_size:'30dp'
+                    #     size_hint: (1, 0.9)
+                    #     pos_hint: {'right': 1, 'top':1}
                 FloatLayout:
                     size_hint_y: 0.25
-                    TangyButton:
-                        id: btn_fg
-                        font_name: 'resources\\Inter.ttf'
-                        font_size:'30dp'
-                        text: 'Predict Physical Properties' # 'Force → Plots'
-                        size_hint: (1, 0.9)
-                        pos_hint: {'right': 1, 'top':1}
+                    # TangyButton:
+                    #     id: btn_fg
+                    #     font_name: 'resources\\Inter.ttf'
+                    #     font_size:'30dp'
+                    #     text: 'Predict Physical Properties' # 'Force → Plots'
+                    #     size_hint: (1, 0.9)
+                    #     pos_hint: {'right': 1, 'top':1}
             # Image container
             FloatLayout:
                 size_hint_x: 0.3
@@ -190,7 +190,7 @@ WindowManager:
                     source: 'resources\\example_image.png'
                     anim_loop: 0
                     anim_delay: .0667
-    # Whole screen float for the info screen
+    # Whole screen float for the INFO SCREEN LAYOUT
     FloatLayout:
         id: info_layout
         disabled: True
@@ -238,6 +238,7 @@ WindowManager:
                         color: WHITE
                         padding: [dp(17), dp(17)]
                         markup: True
+                        on_ref_press: root.open_url(*args)
                         font_name: 'resources\\Inter.ttf'
                         font_size: '16dp'
 

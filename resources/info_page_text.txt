@@ -1,31 +1,13 @@
 [size=36dp]Info Page[/size]
 
 [size=20dp]Application Description[/size]
-This application...
+Particle Distortion Analysis (PDA) is software for the analysis of microaspiration (or ion pipette aspiration) data.
+The source code, along with instructions, documentation and a Windows executable, is available on Github.
 
-[size=20dp]Import Experiments[/size]
-1.
+The Github repository: [ref=https://github.com/HaigBishop/particle-distortion-analysis][color=3498db]github.com/HaigBishop/particle-distortion-analysis[/color][/ref]
 
+Author: Haig Bishop
+Email: haig.bishop@pg.canterbury.ac.nz
+GitHub: [ref=https://github.com/HaigBishop][color=3498db]HaigBishop[/color][/ref]
 
-[size=20dp]Track Particle Deformation[/size]
-1.
-
-
-[size=20dp]Fit Deformation/Current Models[/size]
-1.
-
-
-[size=20dp]Predict Physical Properties[/size]
-1.
-
-
-[size=20dp]Keyboard Controls[/size]
-Z
-
-
-[size=20dp]Mouse Controls[/size]
-Left
-
-
-[size=20dp]Calculation Parameters[/size]
-X
+A big thank you to Ashley Garrill, Volker Nock, and Ayelen Tayagui at UC for supporting this project!

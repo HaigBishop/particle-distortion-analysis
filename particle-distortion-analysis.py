@@ -1,11 +1,12 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.8)
+Program: Particle Deformation Analysis (Version 0.2.9)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 Date: 29/01/2025
 Version Description:
- - Export tracking to CSV
+ - Info page
+ - Remove extra buttons from main screen
 """
 
 # Stops debug messages - also prevents an error after .exe building
@@ -36,6 +37,9 @@ from kivy.core.window import Window
 from kivy.core.window import Keyboard
 from kivy.uix.screenmanager import SlideTransition
 from kivy.properties import ListProperty, ObjectProperty
+
+# Import for opening URLs
+import webbrowser
 
 # Import local modules
 from ie1 import *
@@ -131,6 +135,10 @@ class MainWindow(Screen):
             self.info_layout.x = 69420  # Sends it far away
             self.main_grid.disabled = False
             self.help_scroll.scroll_y = 1  # Resets the scroll
+
+    def open_url(self, instance, value):
+        """Opens URLs when clicked in the info page"""
+        webbrowser.open(value)
 
 class PDAApp(App):
     """base of the PDA kivy app"""
