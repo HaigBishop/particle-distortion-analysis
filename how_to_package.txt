@@ -23,6 +23,7 @@ pyinstaller --clean "particle-distortion-analysis.spec"
 
 
 
+ALL COMMANDS TOGETHER:
 
 python -m venv pda_venv
 pda_venv\Scripts\activate

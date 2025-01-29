@@ -80,15 +80,15 @@ python particle-distortion-analysis.py
 #### Python 3.13.1
 #### Packages (Conda)
 - kivy (2.3.1)
-- opencv (4.10.0)
+- opencv (4.11.0.86)
 - numpy (2.2.2)
 - scipy (1.15.1)
 - moviepy (1.0.3)
 - plyer (2.1.0)
-- pywin32 (307)
+- pywin32 (308)
 - pandas (2.2.3)
 #### Packages (Pip)
-- nptdms (1.9.0)
+- nptdms (1.10.0)
 
 ## Files and Development Descriptions
 There are several Python files which make this program, which are each described.

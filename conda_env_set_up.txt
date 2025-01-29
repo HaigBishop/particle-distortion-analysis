@@ -1,9 +1,0 @@
-
-
-
-conda create -n pda_env python=3.13 -y
-conda activate pda_env
-
-conda install -c conda-forge kivy opencv numpy scipy moviepy plyer pywin32 pandas -y
-pip install nptdms
-
