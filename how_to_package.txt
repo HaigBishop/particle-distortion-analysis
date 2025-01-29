@@ -7,7 +7,7 @@ How to package the application into an .exe file
 python -m venv pda_venv
 pda_venv\Scripts\activate
 python -m pip install --upgrade pip==25.0
-pip install kivy==2.3.1 opencv-python==4.11.0.86 numpy==2.2.2 scipy==1.15.1 moviepy==2.1.2 plyer==2.1.0 pywin32==308 pandas==2.2.3 nptdms==1.10.0 pyinstaller==6.11.1 kivy-deps.gstreamer==0.3.4
+pip install kivy==2.3.1 opencv-python==4.11.0.86 numpy==2.2.2 scipy==1.15.1 moviepy==1.0.3 plyer==2.1.0 pywin32==308 pandas==2.2.3 nptdms==1.10.0 pyinstaller==6.11.1 kivy-deps.gstreamer==0.3.4
 
 2. Clone the repository
 git clone https://github.com/HaigBishop/particle-distortion-analysis.git
