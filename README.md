@@ -116,11 +116,11 @@ There are also some images, fonts, a .kv file and a .txt file.
 MIT License
 (see LICENSE.txt)
 
-## How to Site PCT
+## How to Site PDA
 
-The only way to site PCT is to cite this Github repository:
+The only way to site PDA is to cite this Github repository:
 
-Bishop, H. (2025). Particle Distortion Analysis (Version 0.2.10) [Computer software]. https://github.com/HaigBishop/particle-distortion-analysis
+Bishop, H. (2025). Particle Distortion Analysis (Version 1.0.1) [Computer software]. https://github.com/HaigBishop/particle-distortion-analysis
 
 ## Author and Acknowledgments
 
