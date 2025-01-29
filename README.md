@@ -33,7 +33,7 @@ cd particle-distortion-analysis
 python particle-distortion-analysis.py
 ```
 2. Run using the Windows executable
-(Look for the .exe file in the lastest release on the [Github page](https://github.com/HaigBishop/particle-distortion-analysis/releases))
+(Look for the .exe file in the lastest release on the [Github releases page](https://github.com/HaigBishop/particle-distortion-analysis/releases))
 
 ## Background/Theory
 The purpose of this software is to select events from a microaspiration experiment and track the distortions. 
@@ -52,86 +52,33 @@ After tracking the distortion, the software allows for the export of the data fo
 
 ## Usage
 
-### Keyboard and Mouse Controls
-
-#### Event Selection Keyboard Controls and Mouse Controls
-
-##### Keyboard Controls
-- **S**: 
-  - *Add Start*: If ready for start.
-  - *Add Stop*: If not ready for start.
+### Event Selection Keyboard Controls and Mouse Controls
+- **S**: Add event start or stop.
 - **R**: Remove the current event if the slider is on an event.
-- **Left Arrow / A**: Scroll left or adjust ion data to the left.
-- **Right Arrow / D**: Scroll right or adjust ion data to the right.
-- **+ / =**: Zoom in or adjust ion data to zoom in.
-- **-**: Zoom out or adjust ion data to zoom out.
-- **0**: Reset zoom or reset ion data alignment.
+- **+**: Zoom in.
+- **-**: Zoom out.
+- **0**: Reset zoom.
+- **Left Click**: Set the current frame to the click position.
+- **Scroll Up**: Zoom In
+- **Scroll Down**: Zoom Out
 
-##### Mouse Controls
-- **Left Click**: Set the current frame based on the click position on the thumbnail bar.
-- **Scroll Up**:
-  - *Zoom Out*: If not adjusting ion data.
-  - *Adjust Ion Data In*: If adjusting ion data.
-- **Scroll Down**:
-  - *Zoom In*: If not adjusting ion data.
-  - *Adjust Ion Data Out*: If adjusting ion data.
-- **Scroll Left**: Scroll the view to the left.
-- **Scroll Right**: Scroll the view to the right.
-
-#### Distortion Detection Keyboard Controls and Mouse Controls
-
-##### Keyboard Controls
+### Distortion Detection Keyboard Controls and Mouse Controls
 - **Z**: Zoom into the particle.
 - **X**: Hide lines and circles.
-- **Up Arrow / W**: 
-  - *Shift + Up*: Move pipette tip up.
-  - *Up*: Move circle up.
-- **Down Arrow / S**:
-  - *Shift + Down*: Move pipette tip down.
-  - *Down*: Move circle down.
-- **Left Arrow / A**:
-  - *Shift + Left*: Tilt pipette tip left.
-  - *Left*: Move circle left.
-- **Right Arrow / D**:
-  - *Shift + Right*: Tilt pipette tip right.
-  - *Right*: Move circle right.
+- **Arrows or WASD**: Move the particle.
+- **Shift + Arrows or WASD**: Move the pipette tip.
+- **Left Click**: Move the particle to the clicked position.
+- **Scroll Up**: Decrease the particle radius.
+- **Scroll Down**: Increase the particle radius.
 
-##### Mouse Controls
-- **Left Click**: Move the particle to the clicked position within the image.
-- **Scroll Up**: Increase the particle radius.
-- **Scroll Down**: Decrease the particle radius.
-
-#### Distortion Tracking Keyboard Controls and Mouse Controls
-
-##### Keyboard Controls
-- **Z**: Zoom into the distortion area.
-- **X**: Hide distortion overlays.
-- **S**: 
-  - *Add Start*: If ready for start.
-  - *Add Stop*: If not ready for start.
-- **R**: Remove the current distortion event if the slider is on an event.
-- **Left Arrow / A**: Scroll left or adjust ion data to the left.
-- **Right Arrow / D**: Scroll right or adjust ion data to the right.
-- **Up Arrow / W**: 
-  - *Shift + Up*: Move distortion tip up while maintaining non-decreasing condition.
-  - *Up*: Move distortion up.
-- **Down Arrow / S**:
-  - *Shift + Down*: Move distortion tip down while maintaining non-decreasing condition.
-  - *Down*: Move distortion down.
-- **+ / =**: Zoom in or adjust ion data to zoom in.
-- **-**: Zoom out or adjust ion data to zoom out.
-- **0**: Reset zoom or reset ion data alignment.
-
-##### Mouse Controls
+### Distortion Tracking Controls Controls
+- **Z**: Zoom into the particle.
+- **X**: Hide lines and circles.
+- **Up/Down Arrows or W/S**: Move the distortion.
+- **Left/Right Arrows or A/D**: Previous/Next frame.
 - **Left Click**: Set the current frame based on the click position on the thumbnail bar.
-- **Scroll Up**:
-  - *Zoom Out*: If not adjusting ion data.
-  - *Adjust Ion Data In*: If adjusting ion data.
-- **Scroll Down**:
-  - *Zoom In*: If not adjusting ion data.
-  - *Adjust Ion Data Out*: If adjusting ion data.
-- **Scroll Left**: Scroll the view to the left.
-- **Scroll Right**: Scroll the view to the right.
+- **Scroll Up**: Zoom In
+- **Scroll Down**: Zoom Out
 
 ## Files and Development Descriptions
 There are several Python files which make this program, which are each described.
