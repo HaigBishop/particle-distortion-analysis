@@ -1,7 +1,7 @@
 """
 Module: All functions related to file management
 Program: Particle Deformation Analysis
-Author: Haig Bishop (hbi34@uclive.ac.nz)
+Author: Haig Bishop (haig.bishop@pg.canterbury.ac.nz)
 """
 
 # Kivy imports

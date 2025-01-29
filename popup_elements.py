@@ -1,7 +1,7 @@
 """
 Module: Kivy popup widgets for the app
 Program: Particle Deformation Analysis
-Author: Haig Bishop (hbi34@uclive.ac.nz)
+Author: Haig Bishop (haig.bishop@pg.canterbury.ac.nz)
 """
 
 # Kivy imports

@@ -1,7 +1,7 @@
 """
 Module:  Support functions to predict/track the aspiration event
 Program: Particle Deformation Analysis
-Author: Haig Bishop (hbi34@uclive.ac.nz)
+Author: Haig Bishop (haig.bishop@pg.canterbury.ac.nz)
 """
 
 import cv2
