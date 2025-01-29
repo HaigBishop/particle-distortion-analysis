@@ -52,7 +52,10 @@ After tracking the distortion, the software allows for the export of the data fo
 
 ## Usage
 
-### Event Selection Keyboard Controls and Mouse Controls
+### Event Selection
+Import experiment(s) as video files (and optionally .tdms files), then select the exact frames where events occur. These are exported as a JSON file for each experiment.
+
+##### Controls
 - **S**: Add event start or stop.
 - **R**: Remove the current event if the slider is on an event.
 - **+**: Zoom in.
@@ -62,7 +65,10 @@ After tracking the distortion, the software allows for the export of the data fo
 - **Scroll Up**: Zoom In
 - **Scroll Down**: Zoom Out
 
-### Distortion Detection Keyboard Controls and Mouse Controls
+### Distortion Detection
+Verify the position and size of the particle, as well as the pipette tip in the first frame of the event(s). 
+
+##### Controls
 - **Z**: Zoom into the particle.
 - **X**: Hide lines and circles.
 - **Arrows or WASD**: Move the particle.
@@ -71,7 +77,10 @@ After tracking the distortion, the software allows for the export of the data fo
 - **Scroll Up**: Decrease the particle radius.
 - **Scroll Down**: Increase the particle radius.
 
-### Distortion Tracking Controls Controls
+### Distortion Tracking
+Verify the position of the distortion in each frame of the event(s). This distortion is exported as a CSV file for each event (and optionally the experiment JSON file is updated with the distortion data).
+
+##### Controls
 - **Z**: Zoom into the particle.
 - **X**: Hide lines and circles.
 - **Up/Down Arrows or W/S**: Move the distortion.
@@ -97,8 +106,6 @@ There are also some images, fonts, a .kv file and a .txt file.
   -  popup_elements  -  contains popup GUI elements
 #### Other:
   -  file_management  -  contains code for dealing with files
-
-
 
 ## License
 
