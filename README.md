@@ -76,6 +76,7 @@ python particle-distortion-analysis.py
 (Look for the .exe file in the lastest release on the [GitHub releases page](https://github.com/HaigBishop/particle-distortion-analysis/releases))
 
 ## Dependencies
+(see requirements.txt)
 #### Python 3.13.1
 #### Packages (Conda)
 - kivy (2.3.1)
