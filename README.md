@@ -7,34 +7,6 @@
 Particle Distortion Analysis (PDA) is software for the analysis of microaspiration (or ion pipette aspiration) data.
 The source code, along with instructions, documentation and a Windows executable, is available on Github at [github.com/HaigBishop/particle-distortion-analysis](https://github.com/HaigBishop/particle-distortion-analysis)
 
-## Dependencies
-#### Python 3.13.1
-#### Packages (Conda)
-- kivy (2.3.1)
-- opencv (4.10.0)
-- numpy (2.2.2)
-- scipy (1.15.1)
-- moviepy (1.0.3)
-- plyer (2.1.0)
-- pywin32 (307)
-- pandas (2.2.3)
-#### Packages (Pip)
-- nptdms (1.9.0)
-
-## Installation
-1. Run using python in a conda environment
-```
-conda create -n pda_env python=3.13 -y
-conda activate pda_env
-conda install -c conda-forge kivy opencv numpy scipy moviepy plyer pywin32 pandas -y
-pip install nptdms
-git clone https://github.com/HaigBishop/particle-distortion-analysis.git
-cd particle-distortion-analysis
-python particle-distortion-analysis.py
-```
-2. Run using the Windows executable
-(Look for the .exe file in the lastest release on the [Github releases page](https://github.com/HaigBishop/particle-distortion-analysis/releases))
-
 ## Background/Theory
 The purpose of this software is to select events from a microaspiration experiment and track the distortions. 
 
@@ -88,6 +60,34 @@ Verify the position of the distortion in each frame of the event(s). This distor
 - **Left Click**: Set the current frame based on the click position on the thumbnail bar.
 - **Scroll Up**: Zoom In
 - **Scroll Down**: Zoom Out
+
+## Installation
+1. Run using python in a conda environment
+```
+conda create -n pda_env python=3.13 -y
+conda activate pda_env
+conda install -c conda-forge kivy opencv numpy scipy moviepy plyer pywin32 pandas -y
+pip install nptdms
+git clone https://github.com/HaigBishop/particle-distortion-analysis.git
+cd particle-distortion-analysis
+python particle-distortion-analysis.py
+```
+2. Run using the Windows executable
+(Look for the .exe file in the lastest release on the [GitHub releases page](https://github.com/HaigBishop/particle-distortion-analysis/releases))
+
+## Dependencies
+#### Python 3.13.1
+#### Packages (Conda)
+- kivy (2.3.1)
+- opencv (4.10.0)
+- numpy (2.2.2)
+- scipy (1.15.1)
+- moviepy (1.0.3)
+- plyer (2.1.0)
+- pywin32 (307)
+- pandas (2.2.3)
+#### Packages (Pip)
+- nptdms (1.9.0)
 
 ## Files and Development Descriptions
 There are several Python files which make this program, which are each described.
