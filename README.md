@@ -9,7 +9,7 @@ The source code, along with instructions, documentation and a Windows executable
 
 ## Dependencies
 #### Python 3.13.1
-#### Conda
+#### Packages (Conda)
 - kivy (2.3.1)
 - opencv (4.10.0)
 - numpy (2.2.2)
@@ -18,7 +18,7 @@ The source code, along with instructions, documentation and a Windows executable
 - plyer (2.1.0)
 - pywin32 (307)
 - pandas (2.2.3)
-#### Pip
+#### Packages (Pip)
 - nptdms (1.9.0)
 
 ## Installation
@@ -35,13 +35,22 @@ python particle-distortion-analysis.py
 2. Run using the Windows executable
 (Look for the .exe file in the lastest release on the [Github page](https://github.com/HaigBishop/particle-distortion-analysis/releases))
 
-## Usage
+## Background/Theory
+The purpose of this software is to select events from a microaspiration experiment and track the distortions. 
 
-#### Theory
-X
+An experiment is a video of a microaspiration experiment which may be several minutes long and may contain any number of events. Electrical data is also often recorded during an experiment. This electrical signal (likely as a .tdms files) can be imported and synced with the video.
+
+Events are when a particle is aspirated into the pipette tip, therefore the selection of events is simply selecting the range of frames in an experiment where the particle is aspirated. The first frame of an event is assumed to have 0 distortion, meaning the particle is a perfect circle.
+
+Distortions are when the particle is deformed by the pipette tip as they are aspirated (see figure below). In the first frame of an event, the particle is a perfect circle, so dL (see figure) is 0. As the particle is aspirated, it is deformed by the pipette tip, and dL increases. 
+
+After tracking the distortion, the software allows for the export of the data for all events as CSV files. Most importantly, the CSV file contains a dL column (in units of pixels). This data can be automatically stored in a  JSON file for each experiment, which holds both the electrical signal and distortion data.
+
 <div align="left">
   <img src="./resources/masp_diagram.png" alt="microaspiration theory diagram" width="300"/>
 </div>
+
+## Usage
 
 ### Keyboard and Mouse Controls
 
