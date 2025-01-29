@@ -8,7 +8,7 @@ a = Analysis(
     ['particle-distortion-analysis.py'],
     pathex=['.'],
     binaries=[],
-    datas=[('*.kv', '.'), ('*.txt', '.'), ('resources\\*.ico', '.')],
+    datas=[('resources', 'resources'), ('*.kv', '.'), ('*.txt', '.'), ('resources\\*.ico', '.')],
     hiddenimports=['plyer.platforms.win.filechooser', 'matplotlib.backends.backend_svg', 'moviepy', 'moviepy.editor'],
     hookspath=[],
     hooksconfig={},
