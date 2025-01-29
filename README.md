@@ -147,7 +147,7 @@ There are also some images, fonts, a .kv file and a .txt file.
 ## License
 
 MIT License
-(see LICENSE.md)
+(see LICENSE.txt)
 
 ## How to Site PCT
 
