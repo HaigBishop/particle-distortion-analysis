@@ -116,11 +116,21 @@ There are also some images, fonts, a .kv file and a .txt file.
 MIT License
 (see LICENSE.txt)
 
-## How to Site PDA
+## How to Cite PDA
 
-The only way to site PDA is to cite this Github repository:
+The only way to site PDA is to cite this Github repository. See the CITATION.cff file above and "Cite this repository".
 
-Bishop, H. (2025). Particle Distortion Analysis (Version 1.0.1) [Computer software]. https://github.com/HaigBishop/particle-distortion-analysis
+**APA:**
+Bishop, H. (2025). Particle Distortion Analysis (Version 1.0.1) [Computer software]
+
+**BibTeX:**
+@software{Bishop_Particle_Distortion_Analysis_2025,
+author = {Bishop, Haig},
+month = jan,
+title = {{Particle Distortion Analysis}},
+version = {1.0.1},
+year = {2025}
+}
 
 ## Author and Acknowledgments
 
