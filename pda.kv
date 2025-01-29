@@ -1648,12 +1648,12 @@ WindowManager:
             TangyButton:
                 disabled:  len(root.evt_scroll.grid_layout.children) == 0
                 disabled_color: DARK_GREY
-                text: 'Confirm'
+                text: 'Confirm and Export'
                 size_hint:(None,None)
                 font_size: '13dp'
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-dp(4), '33dp')
-                on_release: root.on_confirm()
+                on_release: root.on_confirm_export()
 
 
 
@@ -1701,6 +1701,27 @@ WindowManager:
         orientation: 'vertical'
         Label:
             id: error_label
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: 'Okay'
+                on_release: root.on_answer('ok')
+
+
+
+
+# =========================================================================================
+
+<ConfirmPopup>:
+    confirm_label: confirm_label
+    size_hint: 0.6, 0.4
+    auto_dismiss: False
+    title: 'Export Successful'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            id: confirm_label
         BoxLayout:
             size_hint_y: None
             height: dp(40)

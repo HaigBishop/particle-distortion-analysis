@@ -1,15 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.7)
+Program: Particle Deformation Analysis (Version 0.2.8)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 Date: 29/01/2025
 Version Description:
- - Fix last frame bug
- - non-decreasing y-positions
- - double arrow to move 5% of total frames
- - play to end/start animations
- - non-decreasing checkbox
+ - Export tracking to CSV
 """
 
 # Stops debug messages - also prevents an error after .exe building

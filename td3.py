@@ -16,9 +16,9 @@ from datetime import datetime
 import os
 
 # Import local modules
-from popup_elements import BackPopup
+from popup_elements import BackPopup, ErrorPopup, ConfirmPopup
 from jobs import EventBox
-from file_management import is_experiment_json, load_experiment_json, kivify_image, is_video_file
+from file_management import kivify_image
 
 # Animation duration for play to end/start (seconds)
 ANIMATION_DURATION = 1.5 
@@ -38,9 +38,65 @@ class TD3Window(Screen):
         # When True, the red circle and line is hidden
         self.hidden = False
 
-    def on_confirm(self):
-        """called by pressing the 'X' button."""
-        pass
+    def on_confirm_export(self):
+        """called by pressing the 'Confirm and Export' button."""
+        # Check if the data is valid
+        errors = self.check_events() ################
+        # If there are issues with the data
+        if errors != []:
+            # Make pop up - alerts of invalid data
+            popup = ErrorPopup()
+            # Adjust the text on the popup
+            popup.error_label.text = "Invalid Data:\n" + "".join(errors)
+            popup.open()
+        # If no issues with the data
+        else:
+            # List of names of events which did not export properly
+            export_errors = []
+            num_exported = 0
+            # For event box in list
+            for evt_box in self.evt_scroll.grid_layout.children:
+                # Get the event object
+                event = evt_box.event
+                success = True
+                try:
+                    # Get the table of data
+                    dataframe = event.get_distortion_data_for_export()
+                    # Write the CSV file
+                    csv_file_loc = event.experiment.directory + '\\' + event.name + '_distortion.csv'
+                    dataframe.to_csv(csv_file_loc, index=False)
+                except Exception as e:
+                    # Add this event to be displayed to user
+                    export_errors.append(" • " + event.name + "\n")
+                    success = False
+                    continue
+                
+                # Export failed
+                if not success:
+                    # Add this event to be displayed to user
+                    export_errors.append(" • " + event.name + "\n")
+                    csv_file_loc = None
+                else:
+                    num_exported += 1
+
+                # Add the CSV file (or None) to the event
+                event.csv_file_loc = csv_file_loc
+
+            # If there were issues exporting the data
+            if export_errors != []:
+                # Make pop up - alerts of issues data
+                popup = ErrorPopup()
+                # Adjust the text on the popup
+                popup.error_label.text = "Failed to write the CSV files for the following events:\n" + "".join(errors)
+                popup.title = "Issues exporting CSV file(s)"
+                popup.open()
+            else:
+                # Make a pop up to confirm export
+                popup = ConfirmPopup()
+                # Adjust the text on the popup
+                popup.confirm_label.text = f"CSV files have been exported successfully for {num_exported} events."
+                popup.title = "CSV files exported successfully"
+                popup.open()
 
     def check_events(self):
         return []

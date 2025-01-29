@@ -16,6 +16,7 @@ from subprocess import Popen as p_open
 from scipy.signal import decimate
 import numpy as np
 import cv2
+import pandas as pd
 
 # Import local modules
 from file_management import read_vid, get_frame, count_frames, file_date, fft_and_filter, normalise_and_smooth_sig, align_sig_to_frames, read_tdms
@@ -277,6 +278,10 @@ class Event():
         self.distortion_y_positions = None
         self.crop_region = None
 
+        # A CSV file attached to this event which describes it and its event
+        self.csv_file_loc = None
+
+
     def get_frame(self, frame_num, direct_indexing=False):
         """Returns the frame at the given frame number"""
         # If frame_num is 'current', use the current frame number
@@ -302,7 +307,7 @@ class Event():
         particle_pos, particle_radius, pipette_angle, left_bottom_x, right_bottom_x = detect_start(self.first_frame, display=False)
         # Update the values 
         # These values were made for a different purpose unfortunately, but we are repurposing them :)
-        self.particle_pos = particle_pos
+        self.particle_pos = (int(particle_pos[0]), int(particle_pos[1]))
         self.particle_radius = particle_radius
         self.pipette_angle = pipette_angle
         self.left_bottom_x = left_bottom_x
@@ -371,6 +376,52 @@ class Event():
         # Convert these positions to be relative to the uncropped frames and save as attributes
         self.distortion_y_positions = [y + top_y - 1 for y in y_maximums]
         self.crop_region = (top_y, bottom_y, left_x, right_x)
+
+    def get_distortion_data_for_export(self):
+        """Returns a pandas dataframe of the distortion data for export.
+        Columns are: 
+            experiment_frame, event_frame, dL_pixels, 
+            particle_tip_x, particle_tip_y, 
+            particle_centre_x, particle_centre_y, particle_radius
+        """
+        # Create lists to hold the data
+        data = {
+            'experiment_frame': [],
+            'event_frame': [],
+            'dL_pixels': [],
+            'particle_tip_x': [],
+            'particle_tip_y': [],
+            'particle_centre_x': [],
+            'particle_centre_y': [],
+            'particle_radius': []
+        }
+        
+        # For each frame in the event
+        for frame_idx in range(len(self.distortion_y_positions)):
+            # Calculate the experiment frame number
+            exp_frame = frame_idx + self.first_frame_num
+            # Calculate event frame number (1-based)
+            evt_frame = frame_idx + 1
+            
+            # Get y position for this frame
+            y_pos = self.distortion_y_positions[frame_idx]
+            
+            # Calculate dL (distance from initial position)
+            initial_y = self.distortion_y_positions[0]
+            dL = int(abs(y_pos - initial_y))
+            
+            # Add the data for this frame
+            data['experiment_frame'].append(exp_frame)
+            data['event_frame'].append(evt_frame)
+            data['dL_pixels'].append(dL)
+            data['particle_tip_x'].append(round(self.particle_tip_x))
+            data['particle_tip_y'].append(round(self.particle_tip_y))
+            data['particle_centre_x'].append(round(self.particle_pos[0]))
+            data['particle_centre_y'].append(round(self.particle_pos[1]))
+            data['particle_radius'].append(round(self.particle_radius))
+        
+        # Create and return the DataFrame
+        return pd.DataFrame(data)
 
     def drawn_first_frame(self, zoomed, hidden=False):
         """Take the first frame, draw the position, angle, etc. Return it.

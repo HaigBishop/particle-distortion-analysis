@@ -101,3 +101,14 @@ class ErrorPopup(Popup):
         if answer == "ok":
             # Close popup
             self.dismiss()
+
+
+class ConfirmPopup(Popup):
+    """A custom Popup object for displaying an confirmation for export of event csvs screen
+    - the popup doesnt do anything, it just tells the user something"""
+
+    def on_answer(self, answer):
+        """called when user presses 'ok'"""
+        if answer == "ok":
+            # Close popup
+            self.dismiss()
