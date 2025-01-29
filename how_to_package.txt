@@ -1,6 +1,8 @@
 How to package the application into an .exe file
 
 
+0. Get into an empty directory
+
 1. Make the virtual environment
 python -m venv pda_venv
 pda_venv\Scripts\activate
