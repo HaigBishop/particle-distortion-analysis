@@ -32,12 +32,12 @@ def resource_path(relative_path):
         return os.path.join(base_path, relative_path)
     else:
         # On Windows
-        if APPLICATION_PATH is not None:
-            base_path = APPLICATION_PATH
-        else:
-            try:
-                base_path = sys._MEIPASS
-            except:
+        try:
+            base_path = sys._MEIPASS
+        except:
+            if APPLICATION_PATH is not None:
+                base_path = APPLICATION_PATH
+            else:
                 base_path = os.path.abspath(".")
         return os.path.join(base_path, relative_path)
 
