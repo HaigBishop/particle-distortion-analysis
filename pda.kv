@@ -71,7 +71,7 @@ WindowManager:
                     Label:
                         id: title_label
                         text: 'Particle Distortion Analysis'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '44dp'
                         size_hint: None, None
                         size: self.texture_size
@@ -81,7 +81,7 @@ WindowManager:
                     # version
                     Label:
                         text: 'v0.2'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '21dp'
                         padding: [dp(7), 0]
                         size_hint: None, None
@@ -93,7 +93,7 @@ WindowManager:
                 # Subtitle
                 Label:
                     text: ' Haig Bishop,  haig.bishop@pg.canterbury.ac.nz,  University of Canterbury'
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     font_size: '12dp'
                     size_hint_x: 1
                     size_hint_y: 0.35
@@ -142,7 +142,7 @@ WindowManager:
                     size_hint_y: 0.25
                     TangyButton:
                         id: btn_IE
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         text: 'Select Events'
                         font_size:'30dp'
                         size_hint: (1, 0.9)
@@ -154,7 +154,7 @@ WindowManager:
                     size_hint_y: 0.25
                     TangyButton:
                         id: btn_ps
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size:'30dp'
                         text: 'Track Distortion'
                         size_hint: (1, 0.9)
@@ -166,7 +166,7 @@ WindowManager:
                     size_hint_y: 0.25
                     # TangyButton:
                     #     id: btn_pf
-                    #     font_name: 'resources\\Inter.ttf'
+                    #     font_name: root.app.resource_path('resources/Inter.ttf')
                     #     text: 'Fit Deformation/Current Models' # 'Deformation → Force'
                     #     font_size:'30dp'
                     #     size_hint: (1, 0.9)
@@ -175,7 +175,7 @@ WindowManager:
                     size_hint_y: 0.25
                     # TangyButton:
                     #     id: btn_fg
-                    #     font_name: 'resources\\Inter.ttf'
+                    #     font_name: root.app.resource_path('resources/Inter.ttf')
                     #     font_size:'30dp'
                     #     text: 'Predict Physical Properties' # 'Force → Plots'
                     #     size_hint: (1, 0.9)
@@ -187,7 +187,7 @@ WindowManager:
                     size_hint: (0.9, 0.975)
                     pos_hint: {'center_x':0.5, 'top':1}
                     fit_mode: 'cover'
-                    source: 'resources\\example_image.png'
+                    source: root.app.resource_path('resources/example_image.png')
                     anim_loop: 0
                     anim_delay: .0667
     # Whole screen float for the INFO SCREEN LAYOUT
@@ -239,7 +239,7 @@ WindowManager:
                         padding: [dp(17), dp(17)]
                         markup: True
                         on_ref_press: root.open_url(*args)
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '16dp'
 
 
@@ -292,7 +292,7 @@ WindowManager:
                 height: '40dp'
                 BlankButton:
                     text:'←'
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     font_size: '35dp'
                     padding: [0, '13dp']
                     size_hint_x: None
@@ -300,7 +300,7 @@ WindowManager:
                     on_release: 
                         root.on_back_btn()
                 Label:
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     text: 'Import Experiments'
                     font_size: '22dp'
                     padding: ['3dp', '2dp']
@@ -319,7 +319,7 @@ WindowManager:
                     TangyButton:
                         id: select_vid_btn
                         size_hint:(None,None)
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         size: ('105dp','33dp')
                         font_size: '11dp'
                         pos_hint: {'x':.095, 'y':.3}
@@ -333,7 +333,7 @@ WindowManager:
                         pos_hint: {'x':.1, 'y':0.06}
                         text: 'No file(s) selected'
                         halign: 'left'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         text_size: self.size
                         shorten: True
                         font_size: '10dp'
@@ -346,7 +346,7 @@ WindowManager:
                         Label:
                             text: 'Experiment Name:'
                             color: WHITE
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             font_size: '14dp'
                             size_hint_x: 0.35
                         FloatLayout:
@@ -378,7 +378,7 @@ WindowManager:
                             pos_hint: {'x':.06, 'y':.83}
                             text:'select ion current file'
                             on_release: root.schedule_with_load(root.select_ion_file)
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                         Button:
                             text: '×'
                             font_size: '21dp'
@@ -398,7 +398,7 @@ WindowManager:
                             pos_hint: {'x':.13, 'y':0.77}
                             text: 'No file selected'
                             halign: 'left'
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text_size: self.size
                             shorten: True
                             font_size: '10dp'
@@ -406,7 +406,7 @@ WindowManager:
                         size_hint_x: 0.5
                         rows: 2
                         Label:
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: 'Video Preview'
                             font_size: '21dp'
                             size_hint: (1, 0.2)
@@ -425,7 +425,7 @@ WindowManager:
                 text:'Experiments (' + str(len(root.exp_scroll.grid_layout.children)) + ')' 
                 size_hint_y: None
                 padding: [0, '30dp']
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 color: WHITE
                 font_size: '17dp'
                 height: '40dp'
@@ -459,7 +459,7 @@ WindowManager:
                     text: ' Use Ion Current Data'
                     size_hint:(1,1)
                     padding: ['7dp', 0, 0, 0]
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     color: WHITE
                     font_size: '11dp'
                     valign: 'center'
@@ -474,15 +474,27 @@ WindowManager:
                 text: 'Proceed'
                 size_hint:(None,None)
                 font_size: '15dp'
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 size: (right_grid.width - dp(4), '33dp')
                 on_release: root.on_proceed(with_ion=True) if use_ion_checkbox.active else root.on_proceed(with_ion=False)
-    LoadingScreen:
+    # Loading Screen
+    FloatLayout:
         disabled: not root.is_loading
         x: 0 if root.is_loading else 69420
-
-
-
+        size_hint: (1, 1)
+        pos_hint: {'center_y': 0.5}
+        canvas.before:
+            Color:
+                rgba: CLEAR_GREY
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        Label:
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            size_hint: (0.2, 0.2)
+            text: 'Loading...'
+            font_size: '25dp'
+            font_name: root.app.resource_path('resources/Inter.ttf')
 
 
 
@@ -537,7 +549,7 @@ WindowManager:
                 height: '40dp'
                 BlankButton:
                     text:'←'
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     font_size: '35dp'
                     padding: [0, '13dp']
                     size_hint_x: None
@@ -545,7 +557,7 @@ WindowManager:
                     on_release: 
                         root.on_back_btn()
                 Label:
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     text: 'Select Events'
                     font_size: '22dp'
                     padding: ['3dp', '2dp']
@@ -569,7 +581,7 @@ WindowManager:
                         id: ion_adjust_btn
                         disabled: not (root.use_ion and root.app.current_has_ion)
                         text:'⇔'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '15dp'
                         padding: [0, '13dp']
                         size_hint_x: None
@@ -582,13 +594,13 @@ WindowManager:
                         text: 'No file(s) selected'
                         padding: ['13dp', 0, 0, '7dp']
                         halign: 'left'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         text_size: self.size
                         shorten: True
                         font_size: '11dp'
                     BlankButton:
                         text:'←'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '15dp'
                         padding: [0, '13dp']
                         size_hint_x: None
@@ -596,7 +608,7 @@ WindowManager:
                         on_press: root.scroll_left() if ion_adjust_btn.state != 'down' else root.ion_adjust_left()
                     BlankButton:
                         text:'+'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '18dp'
                         padding: [0, '13dp']
                         size_hint_x: None
@@ -604,7 +616,7 @@ WindowManager:
                         on_press: root.zoom_in() if ion_adjust_btn.state != 'down' else root.ion_adjust_in()
                     BlankButton:
                         text:'◦'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '20dp'
                         padding: [0, '13dp']
                         size_hint_x: None
@@ -612,7 +624,7 @@ WindowManager:
                         on_press: root.reset_zoom() if ion_adjust_btn.state != 'down' else root.ion_adjust_reset()
                     BlankButton:
                         text:'−'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '18dp'
                         padding: [0, '13dp']
                         size_hint_x: None
@@ -620,7 +632,7 @@ WindowManager:
                         on_press: root.zoom_out() if ion_adjust_btn.state != 'down' else root.ion_adjust_out()
                     BlankButton:
                         text:'→'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '15dp'
                         padding: [0, '13dp']
                         size_hint_x: None
@@ -656,8 +668,8 @@ WindowManager:
                         max: 1
                         size_hint: None, 1
                         width: ion_view.width + dp(32)
-                        cursor_image: 'resources\\white_circle.png'
-                        cursor_disabled_image: 'resources\\white_circle.png'
+                        cursor_image: root.app.resource_path('resources/white_circle.png')
+                        cursor_disabled_image: root.app.resource_path('resources/white_circle.png')
                         cursor_size: '24dp', '24dp'
                         on_value: root.on_slider()
                 # Side buttons and video view
@@ -677,7 +689,7 @@ WindowManager:
                             text: 'Enter Start (S)'
                             size_hint:(None,None)
                             font_size: '11dp'
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             size_hint: 1, 0.25
                             on_press: root.add_start_here()
                         FloatLayout:
@@ -689,7 +701,7 @@ WindowManager:
                             text: 'Enter Stop (S)'
                             size_hint:(None,None)
                             font_size: '11dp'
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             size_hint: 1, 0.25
                             on_press: root.add_stop_here()
                         FloatLayout:
@@ -701,7 +713,7 @@ WindowManager:
                             text: 'Remove (R)'
                             size_hint:(None,None)
                             font_size: '11dp'
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             size_hint: 1, 0.25
                             on_press: root.remove_here()
                         FloatLayout:
@@ -721,7 +733,7 @@ WindowManager:
                                     padding: ['7dp', 0, 0, 0]
                                     halign: 'left'
                                     valign: 'center'
-                                    font_name: 'resources\\Inter.ttf'
+                                    font_name: root.app.resource_path('resources/Inter.ttf')
                                     text_size: self.size
                                     shorten: True
                                     font_size: '12dp'
@@ -743,7 +755,7 @@ WindowManager:
                                     padding: ['7dp', 0, 0, 0]
                                     halign: 'left'
                                     valign: 'center'
-                                    font_name: 'resources\\Inter.ttf'
+                                    font_name: root.app.resource_path('resources/Inter.ttf')
                                     text_size: self.size
                                     shorten: True
                                     font_size: '12dp'
@@ -762,7 +774,7 @@ WindowManager:
                                     padding: ['7dp', 0, 0, 0]
                                     halign: 'left'
                                     valign: 'center'
-                                    font_name: 'resources\\Inter.ttf'
+                                    font_name: root.app.resource_path('resources/Inter.ttf')
                                     text_size: self.size
                                     shorten: True
                                     font_size: '12dp'
@@ -784,7 +796,7 @@ WindowManager:
                                     padding: [0, 0, 0, 0]
                                     halign: 'center'
                                     valign: 'center'
-                                    font_name: 'resources\\Inter.ttf'
+                                    font_name: root.app.resource_path('resources/Inter.ttf')
                                     text_size: self.size
                                     shorten: True
                                     font_size: '12dp'
@@ -816,7 +828,7 @@ WindowManager:
                                 pos_hint: {'right' : 0.98, 'top' : 1}
                                 on_press: root.on_export()
                                 Image:
-                                    source: 'resources\\export.png' 
+                                    source: root.app.resource_path('resources/export.png') 
                                     opacity: 0 if app.current_experiment is None else 1
                                     pos: export_btn.pos 
                                     size: export_btn.size
@@ -856,7 +868,7 @@ WindowManager:
                             text: 'No file(s) selected'
                             padding: ['13dp', 0, 0, '3dp']
                             halign: 'left'
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text_size: self.size
                             shorten: True
                             font_size: '11dp'
@@ -870,7 +882,7 @@ WindowManager:
                 text:'Experiments (' + str(len(root.exp_scroll.grid_layout.children)) + ')' 
                 size_hint_y: None
                 padding: [0, '30dp']
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 color: WHITE
                 font_size: '19dp'
                 height: '40dp'
@@ -905,7 +917,7 @@ WindowManager:
                     text: 'Export as JSON'
                     size_hint:(1,1)
                     padding: ['7dp', 0, 0, 0]
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     color: WHITE
                     font_size: '11dp'
                     valign: 'center'
@@ -932,7 +944,7 @@ WindowManager:
                     text: 'Overwrite Pre-existing Files'
                     size_hint:(1,1)
                     padding: ['7dp', 0, 0, 0]
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     color: WHITE
                     font_size: '11dp'
                     valign: 'center'
@@ -947,7 +959,7 @@ WindowManager:
                 text: 'Proceed'
                 size_hint:(None,None)
                 font_size: '11dp'
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 size: (right_grid.width - dp(4), '33dp')
                 on_release: root.on_proceed()
 
@@ -997,7 +1009,7 @@ WindowManager:
                 height: '40dp'
                 BlankButton:
                     text:'←'
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     font_size: '35dp'
                     padding: [0, '13dp']
                     size_hint_x: None
@@ -1005,7 +1017,7 @@ WindowManager:
                     on_release: 
                         root.on_back_btn()
                 Label:
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     text: 'Detect Distortion'
                     font_size: '20dp'
                     padding: ['3dp', '2dp']
@@ -1024,7 +1036,7 @@ WindowManager:
                     TangyButton:
                         id: select_event_btn
                         size_hint:(None,None)
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         size: ('110dp','33dp')
                         font_size: '12dp'
                         pos_hint: {'x':.095, 'y':.3}
@@ -1038,7 +1050,7 @@ WindowManager:
                         pos_hint: {'x':.1, 'y':0.06}
                         text: 'No file(s) selected'
                         halign: 'left'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         text_size: self.size
                         shorten: True
                         font_size: '12dp'
@@ -1051,7 +1063,7 @@ WindowManager:
                         Label:
                             text: 'Event Name:'
                             color: WHITE
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             font_size: '15dp'
                             size_hint_x: 0.35
                         FloatLayout:
@@ -1076,7 +1088,7 @@ WindowManager:
                         FloatLayout:
                             size_hint: (1, 0.2)
                             Label:
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 text: 'Event Preview'
                                 font_size: '21dp'
                                 size_hint: (1, 1)
@@ -1084,7 +1096,7 @@ WindowManager:
                             # ID label
                             Label:
                                 id: event_id_label
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 text: ''
                                 halign: 'right'
                                 valign: 'center'
@@ -1095,7 +1107,7 @@ WindowManager:
                             # Frame range label
                             Label:
                                 id: frame_range_label
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 text: ''
                                 halign: 'right'
                                 valign: 'center'
@@ -1114,7 +1126,7 @@ WindowManager:
                                 pos_hint: {'right' : 0.98, 'top' : 1}
                                 on_press: root.on_export()
                                 Image:
-                                    source: 'resources\\export.png' 
+                                    source: root.app.resource_path('resources/export.png') 
                                     opacity: 0 if app.current_event is None else 1
                                     pos: export_btn.pos 
                                     size: export_btn.size
@@ -1134,7 +1146,7 @@ WindowManager:
                 text:'Events (' + str(len(root.evt_scroll.grid_layout.children)) + ')' 
                 size_hint_y: None
                 padding: [0, '30dp']
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 color: WHITE
                 font_size: '19dp'
                 height: '40dp'
@@ -1157,7 +1169,7 @@ WindowManager:
                 text: 'Predict Start Point'
                 size_hint:(None,None)
                 font_size: '13dp'
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 size: (right_grid.width-dp(4), '33dp')
                 on_release: root.on_predict()
 
@@ -1204,7 +1216,7 @@ WindowManager:
                 height: '40dp'
                 BlankButton:
                     text:'←'
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     font_size: '35dp'
                     padding: [0, '13dp']
                     size_hint_x: None
@@ -1212,7 +1224,7 @@ WindowManager:
                     on_release: 
                         root.on_back_btn()
                 Label:
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     text: 'Track Distortion'
                     font_size: '20dp'
                     padding: ['3dp', '2dp']
@@ -1237,7 +1249,7 @@ WindowManager:
                         pos_hint: {'x':.03, 'y':0.3}
                         text: 'No file(s) selected'
                         halign: 'left'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         text_size: self.size
                         shorten: True
                         font_size: '12dp'
@@ -1248,7 +1260,7 @@ WindowManager:
                         # ID label
                         Label:
                             id: event_id_label
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: ''
                             halign: 'right'
                             valign: 'center'
@@ -1259,7 +1271,7 @@ WindowManager:
                         # Frame range label
                         Label:
                             id: frame_range_label
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: ''
                             halign: 'right'
                             valign: 'center'
@@ -1281,7 +1293,7 @@ WindowManager:
                         pos_hint: {'right' : 0.98, 'top' : 0.97}
                         on_press: root.on_export()
                         Image:
-                            source: 'resources\\export.png' 
+                            source: root.app.resource_path('resources/export.png') 
                             opacity: 0 if app.current_event is None else 1
                             pos: export_btn.pos 
                             size: export_btn.size
@@ -1292,7 +1304,7 @@ WindowManager:
                         size: '75dp', '325dp'
                         pos_hint: {'x' : 0.02, 'y' : 0.02}
                         Label:
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: 'Scale Particle'
                             halign: 'right'
                             valign: 'center'
@@ -1300,14 +1312,14 @@ WindowManager:
                             size_hint: (None, None)
                             size: '75dp', '35dp'
                         Image:
-                            source: 'resources\\scroll.png'
+                            source: root.app.resource_path('resources/scroll.png')
                             size_hint: (None, None)
                             size: '75dp', '55dp'
                         FloatLayout:
                             size_hint: (None, None)
                             size: '75dp', '8dp'
                         Label:
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: 'Move Particle'
                             halign: 'right'
                             valign: 'center'
@@ -1315,11 +1327,11 @@ WindowManager:
                             size_hint: (None, None)
                             size: '75dp', '35dp'
                         Image:
-                            source: 'resources\\wasd.png'
+                            source: root.app.resource_path('resources/wasd.png')
                             size_hint: (None, None)
                             size: '75dp', '75dp'
                         Label:
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: 'Move Pipette Tip'
                             halign: 'right'
                             valign: 'center'
@@ -1327,7 +1339,7 @@ WindowManager:
                             size_hint: (None, None)
                             size: '75dp', '35dp'
                         Image:
-                            source: 'resources\\wasd_shift.png'
+                            source: root.app.resource_path('resources/wasd_shift.png')
                             size_hint: (None, None)
                             size: '75dp', '75dp'
 
@@ -1348,7 +1360,7 @@ WindowManager:
                 text:'Events (' + str(len(root.evt_scroll.grid_layout.children)) + ')' 
                 size_hint_y: None
                 padding: [0, '30dp']
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 color: WHITE
                 font_size: '19dp'
                 height: '40dp'
@@ -1371,7 +1383,7 @@ WindowManager:
                 text: 'Track Distortion'
                 size_hint:(None,None)
                 font_size: '13dp'
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 size: (right_grid.width-dp(4), '33dp')
                 on_release: root.on_track()
 
@@ -1420,7 +1432,7 @@ WindowManager:
                 height: '40dp'
                 BlankButton:
                     text:'←'
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     font_size: '35dp'
                     padding: [0, '13dp']
                     size_hint_x: None
@@ -1428,7 +1440,7 @@ WindowManager:
                     on_release: 
                         root.on_back_btn()
                 Label:
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     text: 'Track Deformation'
                     font_size: '20dp'
                     padding: ['3dp', '2dp']
@@ -1453,7 +1465,7 @@ WindowManager:
                         pos_hint: {'x':.03, 'y':0.3}
                         text: 'No file(s) selected'
                         halign: 'left'
-                        font_name: 'resources\\Inter.ttf'
+                        font_name: root.app.resource_path('resources/Inter.ttf')
                         text_size: self.size
                         shorten: True
                         font_size: '12dp'
@@ -1464,7 +1476,7 @@ WindowManager:
                         # ID label
                         Label:
                             id: event_id_label
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: ''
                             halign: 'right'
                             valign: 'center'
@@ -1475,7 +1487,7 @@ WindowManager:
                         # Frame range label
                         Label:
                             id: frame_range_label
-                            font_name: 'resources\\Inter.ttf'
+                            font_name: root.app.resource_path('resources/Inter.ttf')
                             text: ''
                             halign: 'right'
                             valign: 'center'
@@ -1497,7 +1509,7 @@ WindowManager:
                         pos_hint: {'right' : 0.98, 'top' : 0.97}
                         on_press: root.on_export()
                         Image:
-                            source: 'resources\\export.png' 
+                            source: root.app.resource_path('resources/export.png') 
                             opacity: 0 if app.current_event is None else 1
                             pos: export_btn.pos 
                             size: export_btn.size
@@ -1520,7 +1532,7 @@ WindowManager:
                             Label:
                                 id: saved_label
                                 text: 'Image saved.'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 color: WHITE
                                 size_hint: None, None
                                 pos_hint: {'x':0.03, 'center_y': 0.5}
@@ -1533,7 +1545,7 @@ WindowManager:
                                 opacity: 0
                             Button:
                                 text:'◀'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 font_size: '18dp'
                                 size_hint: (None, None)
                                 size: '40dp', '40dp'
@@ -1543,7 +1555,7 @@ WindowManager:
                                 on_press: root.on_left_play_to_end_press()
                             Button:
                                 text:'⇐'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 font_size: '24dp'
                                 size_hint: (None, None)
                                 size: '40dp', '40dp'
@@ -1553,7 +1565,7 @@ WindowManager:
                                 on_press: root.on_left_arrow_press(num_frames=0.05)
                             Button:
                                 text:'←'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 font_size: '24dp'
                                 size_hint: (None, None)
                                 size: '40dp', '40dp'
@@ -1571,7 +1583,7 @@ WindowManager:
                             Button:
                                 id: right_btn
                                 text:'→'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 font_size: '24dp'
                                 size_hint: (None, None)
                                 size: '40dp', '40dp'
@@ -1581,7 +1593,7 @@ WindowManager:
                                 on_press: root.on_right_arrow_press()
                             Button:
                                 text:'⇒'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 font_size: '24dp'
                                 size_hint: (None, None)
                                 size: '40dp', '40dp'
@@ -1591,7 +1603,7 @@ WindowManager:
                                 on_press: root.on_right_arrow_press(num_frames=0.05)
                             Button:
                                 text:'▶'
-                                font_name: 'resources\\Inter.ttf'
+                                font_name: root.app.resource_path('resources/Inter.ttf')
                                 font_size: '18dp'
                                 size_hint: (None, None)
                                 size: '40dp', '40dp'
@@ -1613,7 +1625,7 @@ WindowManager:
                                     text: 'Maintain Non-decreasing'
                                     size_hint: (None, None)
                                     size: ('135dp', '35dp')
-                                    font_name: 'resources\\Inter.ttf'
+                                    font_name: root.app.resource_path('resources/Inter.ttf')
                                     color: WHITE
                                     font_size: '10dp'
                                     valign: 'center'
@@ -1629,7 +1641,7 @@ WindowManager:
                 text:'Events (' + str(len(root.evt_scroll.grid_layout.children)) + ')' 
                 size_hint_y: None
                 padding: [0, '30dp']
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 color: WHITE
                 font_size: '19dp'
                 height: '40dp'
@@ -1663,7 +1675,7 @@ WindowManager:
                     text: ' Update Experiments JSON (if present)'
                     size_hint:(1,1)
                     padding: ['7dp', 0, 0, 0]
-                    font_name: 'resources\\Inter.ttf'
+                    font_name: root.app.resource_path('resources/Inter.ttf')
                     color: WHITE
                     font_size: '11dp'
                     valign: 'center'
@@ -1678,7 +1690,7 @@ WindowManager:
                 text: 'Confirm and Export'
                 size_hint:(None,None)
                 font_size: '13dp'
-                font_name: 'resources\\Inter.ttf'
+                font_name: root.app.resource_path('resources/Inter.ttf')
                 size: (right_grid.width-dp(4), '33dp')
                 on_release: root.on_confirm_export(update_exp_json=update_exp_json_checkbox.active)
 
@@ -1850,7 +1862,7 @@ WindowManager:
             radius: [dp(8),]
     Label:
         text: 'Name:  ' + str(root.experiment.name)
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '14dp'
         color: WHITE
         size_hint: (None, None)
@@ -1862,7 +1874,7 @@ WindowManager:
         shorten: True
     Label:
         text: 'File:  ' + str(root.experiment.vid_loc).split('\\')[-1].split('/')[-1]
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '14dp'
         color: WHITE
         size_hint: (None, None)
@@ -1874,7 +1886,7 @@ WindowManager:
         shorten: True
     Label:
         text: 'Date:  ' + str(root.experiment.vid_date)
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '14dp'
         color: WHITE
         size_hint: (None, None)
@@ -1886,7 +1898,7 @@ WindowManager:
         shorten: True
     Button:
         text: '×'
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '18dp'
         background_color: CLEAR
         background_normal: ''
@@ -1902,7 +1914,7 @@ WindowManager:
         pos: (root.x + root.width - dp(32), root.y + root.height - dp(19))
         on_press: root.on_open_btn()
         Image:
-            source: 'resources\\open_folder.png'
+            source: root.app.resource_path('resources/open_folder.png')
             y: self.parent.y + dp(3)
             x: self.parent.x
             size: ('13dp', '13dp')
@@ -1944,7 +1956,7 @@ WindowManager:
             radius: [dp(8),]
     Label:
         text: 'Name:  ' + str(root.event.name)
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '14dp'
         color: WHITE
         size_hint: (None, None)
@@ -1956,7 +1968,7 @@ WindowManager:
         shorten: True
     Label:
         text: 'File:  ' + str(root.experiment.vid_loc).split('\\')[-1].split('/')[-1]
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '14dp'
         color: WHITE
         size_hint: (None, None)
@@ -1968,7 +1980,7 @@ WindowManager:
         shorten: True
     Label:
         text: 'Date:  ' + str(root.experiment.vid_date)
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '14dp'
         color: WHITE
         size_hint: (None, None)
@@ -1980,7 +1992,7 @@ WindowManager:
         shorten: True
     Button:
         text: '×'
-        font_name: 'resources\\Inter.ttf'
+        font_name: root.app.resource_path('resources/Inter.ttf')
         font_size: '18dp'
         background_color: CLEAR
         background_normal: ''
@@ -1996,7 +2008,7 @@ WindowManager:
         pos: (root.x + root.width - dp(32), root.y + root.height - dp(19))
         on_press: root.on_open_btn()
         Image:
-            source: 'resources\\open_folder.png'
+            source: root.app.resource_path('resources/open_folder.png')
             y: self.parent.y + dp(3)
             x: self.parent.x
             size: ('13dp', '13dp')
@@ -2048,19 +2060,3 @@ WindowManager:
     
 
 
-# =========================================================================================
-<LoadingScreen@FloatLayout>:
-    size_hint: (1, 1)
-    pos_hint: {'center_y': 0.5}
-    canvas.before:
-        Color:
-            rgba: CLEAR_GREY
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    Label:
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-        size_hint: (0.2, 0.2)
-        text: 'Loading...'
-        font_size: '25dp'
-        font_name: 'resources\\Inter.ttf'

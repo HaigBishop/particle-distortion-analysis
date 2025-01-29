@@ -9,14 +9,41 @@ from kivy.graphics.texture import Texture
 
 # Import modules
 from datetime import datetime
+from platform import platform
 import cv2
 import os
+import sys
 import numpy as np
 import json
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
 from moviepy.editor import VideoFileClip
 import math
+
+# Get the path of the application
+# This is important for when using executable files
+APPLICATION_PATH = os.path.abspath(".")
+
+def resource_path(relative_path):
+    plat = platform()
+    if 'mac' in plat:
+        # On macOS, assume files are alongside this script inside the app bundle
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base_path, relative_path)
+    else:
+        # On Windows
+        if APPLICATION_PATH is not None:
+            base_path = APPLICATION_PATH
+        else:
+            try:
+                base_path = sys._MEIPASS
+            except:
+                base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
+
+def class_resource_path(self, relative_path):
+    # Just wrap resource_path so it can be used in class methods
+    return resource_path(relative_path)
 
 def select_increment(value_range, num_labels):
     """num_labels must be > 1"""

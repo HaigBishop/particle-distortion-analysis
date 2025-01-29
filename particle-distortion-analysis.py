@@ -1,11 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.10)
+Program: Particle Deformation Analysis (Version 0.2.11)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (haig.bishop@pg.canterbury.ac.nz)
 Date: 29/01/2025
 Version Description:
- - Added option to update the experiments JSON file by adding tracking data to the events
+ - More robust path handling
 """
 
 # Stops debug messages - also prevents an error after .exe building
@@ -46,13 +46,14 @@ from ie3 import *
 from td1 import *
 from td2 import *
 from td3 import *
+from file_management import resource_path, class_resource_path
 
 # Set background colour to grey
 DARK_GREY = (32 / 255, 33 / 255, 35 / 255, 1)
 Window.clearcolor = DARK_GREY
 
 # Info page text
-INFO_FILE_POS = "resources\\info_page_text.txt"
+INFO_FILE_POS = resource_path("resources/info_page_text.txt")
 
 
 class WindowManager(ScreenManager):
@@ -152,13 +153,15 @@ class PDAApp(App):
     current_has_ion = BooleanProperty(False)
     # True when shift key is down
     shift_is_down = BooleanProperty(False)
+    # This function/method allows files to be accessed in the .exe application
+    resource_path = class_resource_path
 
     def build(self):
         """initialises the app"""
         # Label window
         self.title = "Particle Deformation Analysis"
         # Set app icon
-        self.icon = "resources\\icon_128x128.png"
+        self.icon = resource_path("resources/icon.png")
         # Bind the file drop call
         Window.bind(on_drop_file=self._on_file_drop)
 

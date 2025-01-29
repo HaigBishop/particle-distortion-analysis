@@ -175,6 +175,15 @@ def bounded_hough_circle(image, bbox, min_r, max_r, expected_radius, display=Fal
     thres_1 = 150
     thres_2 = 75
 
+    # Input validation to prevent OpenCV errors
+    if min_r <= 0 or max_r <= 0:
+        print("Invalid radius values")
+        return (expected_x, expected_y, expected_radius)
+    
+    if min_r >= max_r:
+        print("Min radius must be less than max radius")
+        return (expected_x, expected_y, expected_radius)
+
     # The minimum distance between circles
     min_dist = 1
     # Define the expected circle in order to select the best one
@@ -195,18 +204,26 @@ def bounded_hough_circle(image, bbox, min_r, max_r, expected_radius, display=Fal
     i = 0
     while circles is None and i < 28:
         i += 1
-        # Attempt to detect circles in the grayscale image.
-        circles = cv2.HoughCircles(
-            image,
-            cv2.HOUGH_GRADIENT,
-            1,
-            min_dist,
-            param1=thres_1,
-            param2=thres_2,
-            minRadius=min_r,
-            maxRadius=max_r,
-        )
+        # Ensure thresholds stay positive
+        thres_1 = max(1, int(thres_1))
+        thres_2 = max(1, int(thres_2))
         
+        try:
+            # Attempt to detect circles in the grayscale image.
+            circles = cv2.HoughCircles(
+                image,
+                cv2.HOUGH_GRADIENT,
+                1,
+                min_dist,
+                param1=thres_1,
+                param2=thres_2,
+                minRadius=min_r,
+                maxRadius=max_r,
+            )
+        except cv2.error as e:
+            print(f"OpenCV error: {e}")
+            return (expected_x, expected_y, expected_radius)
+
         if display and circles is not None:
             disp_img = image.copy()
             for circle in circles[0, :]:

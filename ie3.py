@@ -24,7 +24,7 @@ import os
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
 from jobs import ExperimentBox
-from file_management import align_sig_to_frames, write_experiment_json, kivify_image, split_min_max, generate_y_axis_labels, downsample_image
+from file_management import resource_path, align_sig_to_frames, write_experiment_json, kivify_image, split_min_max, generate_y_axis_labels, downsample_image
 
 # Set constants
 ION_BACKGROUND_SHADE = 245
@@ -966,7 +966,7 @@ class IonCurrentView(Image):
                             # Trim to 5 characters if longer
                             label = label[:5] if len(label) > 5 else label
                             # Create new label
-                            label_obj = Label(text=label, font_size='10dp', font_name='resources\\Inter.ttf', 
+                            label_obj = Label(text=label, font_size='10dp', font_name=resource_path('resources/Inter.ttf'), 
                                             pos_hint={'x': 0, 'center_y': int(normalised_value) / height}, 
                                             color=WHITE, size_hint=(1,1), valign='center', halign='left')
                             self.y_axis_layout.add_widget(label_obj)
