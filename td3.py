@@ -5,6 +5,7 @@ Author: Haig Bishop (hbi34@uclive.ac.nz)
 """
 
 # Kivy imports
+import json
 from kivy.app import App
 from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
@@ -38,7 +39,7 @@ class TD3Window(Screen):
         # When True, the red circle and line is hidden
         self.hidden = False
 
-    def on_confirm_export(self):
+    def on_confirm_export(self, update_exp_json=False):
         """called by pressing the 'Confirm and Export' button."""
         # Check if the data is valid
         errors = self.check_events() ################
@@ -65,7 +66,41 @@ class TD3Window(Screen):
                     # Write the CSV file
                     csv_file_loc = event.experiment.directory + '\\' + event.name + '_distortion.csv'
                     dataframe.to_csv(csv_file_loc, index=False)
+                    # If we are updating the experiments JSON by adding tracking data to the events
+                    if update_exp_json:
+                        # Get the events experiment
+                        experiment = event.experiment
+                        # Get the JSON path
+                        json_path = experiment.json_file_loc
+                        # Does the JSON file exist?
+                        if os.path.exists(json_path):
+                            # Load the JSON file
+                            with open(json_path, 'r') as file:
+                                json_data = json.load(file)
+                            # Does json_data["events"] exist
+                            if "events" in json_data:
+                                # Add these values to the event:
+                                # Find the matching event in the JSON data
+                                for evt in json_data["events"]:
+                                    if evt["id"] == event.id:
+                                        # Add tracking data to the event - convert numpy types to native Python types
+                                        evt["dL_pixels"] = [int(x) for x in dataframe["dL_pixels"].tolist()]
+                                        evt["particle_tip_x"] = int(round(event.particle_tip_x))
+                                        evt["particle_tip_y"] = [int(y) for y in event.distortion_y_positions]
+                                        evt["particle_centre_x"] = int(round(event.particle_pos[0]))
+                                        evt["particle_centre_y"] = int(round(event.particle_pos[1]))
+                                        evt["particle_radius"] = int(round(event.particle_radius))
+                                        evt["labelling_timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        break
+                                
+                                # Write the updated JSON back to file
+                                with open(json_path, 'w') as file:
+                                    json.dump(json_data, file, indent=4)
+                        else:
+                            print('JSON file does not exist: ' + json_path)
+
                 except Exception as e:
+                    print("Event Export Error: " + str(e))
                     # Add this event to be displayed to user
                     export_errors.append(" • " + event.name + "\n")
                     success = False
@@ -82,12 +117,13 @@ class TD3Window(Screen):
                 # Add the CSV file (or None) to the event
                 event.csv_file_loc = csv_file_loc
 
+
             # If there were issues exporting the data
             if export_errors != []:
                 # Make pop up - alerts of issues data
                 popup = ErrorPopup()
                 # Adjust the text on the popup
-                popup.error_label.text = "Failed to write the CSV files for the following events:\n" + "".join(errors)
+                popup.error_label.text = "Failed to write the CSV files for the following events:\n" + "".join(export_errors)
                 popup.title = "Issues exporting CSV file(s)"
                 popup.open()
             else:

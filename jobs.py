@@ -415,7 +415,7 @@ class Event():
             data['event_frame'].append(evt_frame)
             data['dL_pixels'].append(dL)
             data['particle_tip_x'].append(round(self.particle_tip_x))
-            data['particle_tip_y'].append(round(self.particle_tip_y))
+            data['particle_tip_y'].append(round(self.distortion_y_positions[frame_idx]))
             data['particle_centre_x'].append(round(self.particle_pos[0]))
             data['particle_centre_y'].append(round(self.particle_pos[1]))
             data['particle_radius'].append(round(self.particle_radius))

@@ -1,12 +1,11 @@
 """
-Program: Particle Deformation Analysis (Version 0.2.9)
+Program: Particle Deformation Analysis (Version 0.2.10)
 Description:
 - Software for the analysis of micro aspiration data
 Author: Haig Bishop (hbi34@uclive.ac.nz)
 Date: 29/01/2025
 Version Description:
- - Info page
- - Remove extra buttons from main screen
+ - Added option to update the experiments JSON file by adding tracking data to the events
 """
 
 # Stops debug messages - also prevents an error after .exe building

@@ -1623,7 +1623,7 @@ WindowManager:
             size_hint_x: 0.02
         GridLayout:
             id: right_grid
-            rows: 4
+            rows: 6
             size_hint_x: 0.24
             Label:
                 text:'Events (' + str(len(root.evt_scroll.grid_layout.children)) + ')' 
@@ -1638,7 +1638,7 @@ WindowManager:
                 id: evt_scroll
                 window: td3_window
                 size_hint:(None,None)
-                height: right_grid.height - dp(83)
+                height: right_grid.height - dp(114)
                 width: right_grid.width-dp(4)
                 bar_pos_y: 'right'
                 do_scroll_x: False
@@ -1646,6 +1646,32 @@ WindowManager:
             FloatLayout:
                 size_hint:(None,None)
                 size: (right_grid.width-dp(4), '4dp')
+            GridLayout:
+                cols: 2
+                size_hint:(None,None)
+                size: (right_grid.width - dp(4), '27dp')
+                FloatLayout:
+                    id: dumbass_layout
+                    size_hint: None, None
+                    size: '27dp', '27dp'
+                    CheckBox:
+                        id: update_exp_json_checkbox
+                        active: True
+                        size_hint: 1, 1
+                        pos: dumbass_layout.x - 18 + dp(12), dumbass_layout.y - 18 + dp(12)
+                Label:
+                    text: ' Update Experiments JSON (if present)'
+                    size_hint:(1,1)
+                    padding: ['7dp', 0, 0, 0]
+                    font_name: 'resources\\Inter.ttf'
+                    color: WHITE
+                    font_size: '11dp'
+                    valign: 'center'
+                    halign: 'left'
+                    text_size: self.size
+            FloatLayout:
+                size_hint:(None,None)
+                size: (right_grid.width - dp(4), '4dp')
             TangyButton:
                 disabled:  len(root.evt_scroll.grid_layout.children) == 0
                 disabled_color: DARK_GREY
@@ -1654,7 +1680,7 @@ WindowManager:
                 font_size: '13dp'
                 font_name: 'resources\\Inter.ttf'
                 size: (right_grid.width-dp(4), '33dp')
-                on_release: root.on_confirm_export()
+                on_release: root.on_confirm_export(update_exp_json=update_exp_json_checkbox.active)
 
 
 
