@@ -35,9 +35,11 @@ def resource_path(relative_path):
         if getattr(sys, 'frozen', False):
             # Running in a PyInstaller bundle
             base_path = sys._MEIPASS
+            print(1)
         else:
             # Running in a normal Python environment
-            base_path = os.path.abspath(".")
+            # base_path = os.path.abspath(".")
+            base_path = APPLICATION_PATH
         return os.path.join(base_path, relative_path)
 
 def class_resource_path(self, relative_path):

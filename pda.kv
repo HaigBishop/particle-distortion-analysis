@@ -80,7 +80,7 @@ WindowManager:
                         pos_hint: {'x': 0, 'y': 0}
                     # version
                     Label:
-                        text: 'v1.0.0'
+                        text: 'v1.0.1'
                         font_name: root.app.resource_path('resources/Inter.ttf')
                         font_size: '21dp'
                         padding: [dp(7), 0]
@@ -137,7 +137,8 @@ WindowManager:
             GridLayout:
                 rows: 4
                 size_hint_x: 0.7
-                # Button wrapper
+                FloatLayout:
+                    size_hint_y: 0.25
                 FloatLayout:
                     size_hint_y: 0.25
                     TangyButton:
@@ -164,22 +165,24 @@ WindowManager:
                             root.manager.transition.direction = 'left'
                 FloatLayout:
                     size_hint_y: 0.25
-                    # TangyButton:
-                    #     id: btn_pf
-                    #     font_name: root.app.resource_path('resources/Inter.ttf')
-                    #     text: 'Fit Deformation/Current Models' # 'Deformation → Force'
-                    #     font_size:'30dp'
-                    #     size_hint: (1, 0.9)
-                    #     pos_hint: {'right': 1, 'top':1}
-                FloatLayout:
-                    size_hint_y: 0.25
-                    # TangyButton:
-                    #     id: btn_fg
-                    #     font_name: root.app.resource_path('resources/Inter.ttf')
-                    #     font_size:'30dp'
-                    #     text: 'Predict Physical Properties' # 'Force → Plots'
-                    #     size_hint: (1, 0.9)
-                    #     pos_hint: {'right': 1, 'top':1}
+                # FloatLayout:
+                #     size_hint_y: 0.25
+                #     TangyButton:
+                #         id: btn_pf
+                #         font_name: root.app.resource_path('resources/Inter.ttf')
+                #         text: 'Fit Deformation/Current Models' # 'Deformation → Force'
+                #         font_size:'30dp'
+                #         size_hint: (1, 0.9)
+                #         pos_hint: {'right': 1, 'top':1}
+                # FloatLayout:
+                #     size_hint_y: 0.25
+                #     TangyButton:
+                #         id: btn_fg
+                #         font_name: root.app.resource_path('resources/Inter.ttf')
+                #         font_size:'30dp'
+                #         text: 'Predict Physical Properties' # 'Force → Plots'
+                #         size_hint: (1, 0.9)
+                #         pos_hint: {'right': 1, 'top':1}
             # Image container
             FloatLayout:
                 size_hint_x: 0.3
