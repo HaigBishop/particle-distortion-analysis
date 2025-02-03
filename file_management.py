@@ -465,8 +465,10 @@ def write_experiment_json(experiment, use_ion=True, overwrite_ok=False):
     event_dictionaries = []
     # If we have any events selected
     if len(experiment.event_ranges) > 0:
-        # Align/zoom signal to the video frames
-        aligned_signal = align_sig_to_frames(experiment.ioncurr_sig, experiment.num_frames, experiment.ion_frame_range)
+        # If using ion
+        if use_ion:
+            # Align/zoom signal to the video frames
+            aligned_signal = align_sig_to_frames(experiment.ioncurr_sig, experiment.num_frames, experiment.ion_frame_range)
         # For every event
         i = 1
         for first_frame, last_frame in experiment.event_ranges:
