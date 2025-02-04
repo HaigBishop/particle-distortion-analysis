@@ -49,7 +49,7 @@ exe = EXE(
     a.datas,
     *[Tree(p) for p in (sdl2.dep_bins + glew.dep_bins)],  # Kivy binaries
     [],
-    name='PCT',
+    name='PDA',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

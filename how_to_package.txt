@@ -32,4 +32,10 @@ pip install kivy==2.3.1 opencv-python==4.11.0.86 numpy==2.2.2 scipy==1.15.1 movi
 git clone https://github.com/HaigBishop/particle-distortion-analysis.git
 cd particle-distortion-analysis
 pyinstaller --clean "particle-distortion-analysis.spec"
+cd ..
+mkdir PDA_release
+copy particle-distortion-analysis\README.md PDA_release\
+copy particle-distortion-analysis\LICENSE.txt PDA_release\
+copy particle-distortion-analysis\dist\PDA.exe PDA_release\
+
 
