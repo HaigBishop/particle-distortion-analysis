@@ -121,14 +121,14 @@ MIT License
 The only way to site PDA is to cite this Github repository. See the CITATION.cff file above and "Cite this repository".
 
 **APA:**
-Bishop, H. (2025). Particle Distortion Analysis (Version 1.0.2) [Computer software]
+Bishop, H. (2025). Particle Distortion Analysis (Version 1.0.3) [Computer software]
 
 **BibTeX:**
 @software{Bishop_Particle_Distortion_Analysis_2025,
 author = {Bishop, Haig},
 month = jan,
 title = {{Particle Distortion Analysis}},
-version = {1.0.1},
+version = {1.0.3},
 year = {2025}
 }
 

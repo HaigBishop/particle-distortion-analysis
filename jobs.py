@@ -318,7 +318,9 @@ class Event():
         line_start = (int(self.left_bottom_x), int(-0)) # Top of line
         line_end = (int(self.left_bottom_x + self.pipette_angle * height), int(-height)) # Bottom of line
         # This slop is the slope of the lines running along the length of the pipette
-        slope = (line_start[1] - line_end[1]) / (line_start[0] - line_end[0])
+        bot = (line_start[0] - line_end[0])
+        bot = 1e-6 if bot == 0 else bot
+        slope = (line_start[1] - line_end[1]) / bot
         # This slope is the slope of the line running along the bottom of the pipette at the tip (the width of the pipette)
         pipette_tip_slope = -1/slope
         # This point is the point of the particle furthest into the pipette but still on the edge of the perfect circle

@@ -428,6 +428,14 @@ def detect_sides(image, display=False):
         lines_features = new_list[:]
         new_list = []
 
+    # In some cases the process fails
+    if not lines_features:
+        default_angle = 0
+        default_left_bottom = int(width / 2 - width * 0.1)
+        default_right_bottom = int(width / 2 + width * 0.1)
+        default_bottom_y = int(height * 0.6)
+        return default_angle, default_left_bottom, default_right_bottom, default_bottom_y
+
     # Sort by x0
     lines_features.sort(key=lambda x: x[1])
     # Select the lines on the left and the right sides
