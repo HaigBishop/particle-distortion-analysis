@@ -1,4 +1,7 @@
-How to package the application into an .exe file
+How to package the application
+
+
+# ── WINDOWS (.exe) ──────────────────────────────────────────────────────────
 
 
 0. Get into an empty directory
@@ -39,3 +42,95 @@ copy particle-distortion-analysis\LICENSE.txt PDA_release\
 copy particle-distortion-analysis\dist\PDA.exe PDA_release\
 
 
+
+# ── MACOS (.dmg) ─────────────────────────────────────────────────────────────
+# Partially informed by: https://kivy.org/doc/stable/guide/packaging-osx.html
+# Requires: Xcode CLI tools, Homebrew, an Apple Developer ID certificate,
+#           and create-dmg (brew install create-dmg)
+
+
+# 0. Ensure conda is NOT on PATH (PyInstaller conflicts with conda)
+conda deactivate
+export PATH=$(echo $PATH | sed 's|/Users/haig/miniconda3/bin:||g')
+export PATH=$(echo $PATH | sed 's|/Users/haig/miniconda3/condabin:||g')
+
+# 1. Use Homebrew Python (not conda)
+brew install python@3.13
+export PATH="/opt/homebrew/opt/python@3.13/bin:$PATH"
+hash -r
+python3 --version
+
+# 2. Set up a clean build directory
+rm -rf ~/Documents/pda-macos-build
+mkdir -p ~/Documents/pda-macos-build
+cd ~/Documents/pda-macos-build
+
+# 3. Clone the repository
+git clone https://github.com/HaigBishop/particle-distortion-analysis.git
+cd particle-distortion-analysis
+
+# 4. Create and activate a fresh venv
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel
+
+# 5. Install dependencies
+pip install "kivy==2.3.1" pyinstaller
+pip install opencv-python numpy scipy moviepy plyer pandas nptdms pyobjc-framework-Cocoa
+
+# 6. Run PyInstaller
+pyinstaller --clean "particle-distortion-analysis_(macos).spec"
+
+# 7. Test the app
+open dist/PDA.app
+
+
+# ── CODE SIGNING ──────────────────────────────────────────────────────────────
+# Sign all .dylib files individually first (important!), then deep-sign the app.
+# Replace "Haig Bishop (6LR2726467)" with your Developer ID certificate name.
+
+find dist/PDA.app/Contents/Frameworks -type f -name "*.dylib" \
+  -exec codesign --force --sign "Developer ID Application: Haig Bishop (6LR2726467)" \
+  --options runtime --timestamp {} \;
+
+# Sign any __dot__dylibs subdirectories
+for pkg in cv2 kivy PIL scipy; do
+  find "dist/PDA.app/Contents/Frameworks/${pkg}/__dot__dylibs" -type f -name "*.dylib" \
+    -exec codesign --force --sign "Developer ID Application: Haig Bishop (6LR2726467)" \
+    --options runtime --timestamp {} \; 2>/dev/null || true
+done
+
+codesign --deep --force --verbose \
+  --sign "Developer ID Application: Haig Bishop (6LR2726467)" \
+  --options runtime --timestamp \
+  dist/PDA.app
+
+codesign --verify --deep --strict --verbose=2 dist/PDA.app
+
+
+# ── CREATE DMG ────────────────────────────────────────────────────────────────
+
+create-dmg \
+  --volname "Particle Distortion Analysis" \
+  --volicon "resources/icon.icns" \
+  --window-size 900 600 \
+  --icon-size 100 \
+  --app-drop-link 260 150 \
+  --icon "PDA.app" 130 150 \
+  dist/PDA.dmg \
+  dist/
+
+
+# ── NOTARISE & STAPLE ─────────────────────────────────────────────────────────
+# Get an app-specific password from: https://support.apple.com/en-us/102654
+
+xcrun notarytool submit dist/PDA.dmg \
+  --apple-id "haggisbishop@proton.me" \
+  --team-id "6LR2726467" \
+  --password "app-specific-password" \
+  --wait
+
+xcrun stapler staple dist/PDA.app
+xcrun stapler staple dist/PDA.dmg
+
+spctl --assess --type install --verbose=4 dist/PDA.app
