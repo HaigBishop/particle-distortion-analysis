@@ -70,7 +70,7 @@ git clone https://github.com/HaigBishop/particle-distortion-analysis.git
 cd particle-distortion-analysis
 
 # 4. Create and activate a fresh venv
-python3 -m venv venv
+python3 -m venv venv # OR e.g: /opt/homebrew/opt/python@3.13/bin/python3.13 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
 
@@ -134,3 +134,9 @@ xcrun stapler staple dist/PDA.app
 xcrun stapler staple dist/PDA.dmg
 
 spctl --assess --type install --verbose=4 dist/PDA.app
+
+
+# -- Quick Signing Alternative ------------------
+codesign --deep --force --sign - dist/PDA.app
+cd dist && zip -r PDA_macos.zip PDA.app
+
