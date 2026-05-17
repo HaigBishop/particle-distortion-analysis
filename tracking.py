@@ -290,9 +290,9 @@ def calculate_alpha_beta(image):
     hist_size = len(hist)
     # Calculate cumulative distribution from the histogram
     accumulator = []
-    accumulator.append(float(hist[0]))
+    accumulator.append(float(hist[0][0]))
     for index in range(1, hist_size):
-        accumulator.append(accumulator[index - 1] + float(hist[index]))
+        accumulator.append(accumulator[index - 1] + float(hist[index][0]))
     # Locate points to clip
     maximum = accumulator[-1]
     clip_hist_percent *= maximum / 100.0
@@ -379,6 +379,8 @@ def detect_sides(image, display=False):
     lines_features = []
     for x1, y1, x2, y2 in lines:
         # Get the 4 desired features from this line
+        if y2 == y1:
+            continue  # skip horizontal lines — not pipette sides and cause divide-by-zero
         gradient = (x2 - x1) / (y2 - y1)
         x0 = int(x1 - gradient * y1)
         bottom_x = x1 if y1 > y2 else x2

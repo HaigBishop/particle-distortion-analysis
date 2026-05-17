@@ -11,13 +11,12 @@ from kivy.properties import BooleanProperty
 from kivy.clock import Clock
 
 # Import modules
-from plyer import filechooser
 import os
 
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
 from jobs import Experiment, ExperimentBox
-from file_management import is_ion_file, is_video_file, kivify_image, get_frame
+from file_management import is_ion_file, is_video_file, kivify_image, get_frame, open_file_dialog
 
 
 class IE1Window(Screen):
@@ -160,29 +159,15 @@ class IE1Window(Screen):
         """called when [select video file(s)] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
-        # Only allow selection of TDMS
         filters = [("Video files", "*.avi", "*.mp4", "*.wmv")]
-        # Open folder selector window - send selection to self.selected
-        filechooser.open_file(
-            on_selection=self.vid_selected, 
-            title="Select file(s)", 
-            filters=filters,
-            multiple=True
-        )
+        open_file_dialog(on_selection=self.vid_selected, title="Select file(s)", filters=filters, multiple=True)
 
     def select_ion_file(self, *args):
         """called when [select ion current file] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
-        # Only allow selection of TDMS
         filters = [("TDMS files", "*.tdms")]
-        # Open folder selector window - send selection to self.selected
-        filechooser.open_file(
-            on_selection=self.ion_selected, 
-            title="Select file(s)", 
-            filters=filters,
-            multiple=False
-        )
+        open_file_dialog(on_selection=self.ion_selected, title="Select file(s)", filters=filters, multiple=False)
 
     def vid_selected(self, selection):
         """receives selection from selector window

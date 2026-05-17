@@ -140,7 +140,7 @@ class TD2Window(Screen):
         current = self.app.current_event
         if current is not None:
             # Get the directory and name
-            directory = current.experiment.directory + '\\'
+            directory = current.experiment.directory
             name = current.name
             # Format the date and time as text
             now = datetime.now()
@@ -152,7 +152,7 @@ class TD2Window(Screen):
             # Get the image itself
             image = current.first_frame
             # Combine all and write
-            path = directory + name + "_capture" + date_extension + ".png"
+            path = os.path.join(directory, name + "_capture" + date_extension + ".png")
             cv2.imwrite(path, image)
             # Print export to console
             print('Exported: ' + path)

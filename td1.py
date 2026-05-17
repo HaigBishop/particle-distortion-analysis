@@ -9,7 +9,6 @@ from kivy.app import App
 from kivy.uix.screenmanager import Screen
 
 # Import modules
-from plyer import filechooser
 import cv2
 from datetime import datetime
 import os
@@ -17,7 +16,7 @@ import os
 # Import local modules
 from popup_elements import BackPopup, ErrorPopup
 from jobs import EventBox
-from file_management import is_experiment_json, load_experiment_json, kivify_image
+from file_management import is_experiment_json, load_experiment_json, kivify_image, open_file_dialog
 
 
 class TD1Window(Screen):
@@ -77,21 +76,23 @@ class TD1Window(Screen):
         """called when [select event file(s)] button is pressed
         - opens the file select window
         - selection is sent to self.selected()"""
-        # Only allow selection of JSON
         filters = [("JSON files", "*.json")]
-        # Open folder selector window - send selection to self.selected
-        filechooser.open_file(
-            on_selection=self.experiment_json_selected, 
-            title="Select file(s)", 
-            filters=filters,
-            multiple=True
-        )
+        open_file_dialog(on_selection=self.experiment_json_selected, title="Select file(s)", filters=filters, multiple=True)
 
     def experiment_json_selected(self, selection):
         """receives selection from selector window
         - checks if the selections are valid
         - if they are it adds them as events
         - if any are not valid it will display an error string"""
+        try:
+            self._experiment_json_selected_inner(selection)
+        except Exception as e:
+            import traceback
+            print(f"experiment_json_selected unhandled error: {e}")
+            print(traceback.format_exc())
+
+    def _experiment_json_selected_inner(self, selection):
+        print(f"experiment_json_selected: received {len(selection)} file(s): {selection}")
         errors = ['no_events', 'no_valid_exps']
         # Set booleans to test if selection is valid
         no_valid, duplicate, invalid_json, invalid_video, invalid_ion, no_events = True, False, False, False,  False, True
@@ -101,6 +102,7 @@ class TD1Window(Screen):
             if is_experiment_json(file_loc):
                 # Make an experiment object from the JSON file
                 experiment, json_errors = load_experiment_json(file_loc)
+                print(f"  load_experiment_json: experiment={experiment is not None}, errors={json_errors}")
                 # If we loaded correctly
                 if experiment is not None and len(json_errors) == 0:
                     # If it doesn't already exist
@@ -134,6 +136,7 @@ class TD1Window(Screen):
                     errors += json_errors
             # Invalid JSON file
             else:
+                print(f"  is_experiment_json returned False for: {file_loc}")
                 invalid_json = True
                 errors.append('invalid_json')
         # No duplicate errors tolerated!
@@ -244,7 +247,7 @@ class TD1Window(Screen):
         current = self.app.current_event
         if current is not None:
             # Get the directory and name
-            directory = current.experiment.directory + '\\'
+            directory = current.experiment.directory
             name = current.name
             # Format the date and time as text
             now = datetime.now()
@@ -256,7 +259,7 @@ class TD1Window(Screen):
             # Get the image itself
             image = current.first_frame
             # Combine all and write
-            path = directory + name + "_capture" + date_extension + ".png"
+            path = os.path.join(directory, name + "_capture" + date_extension + ".png")
             cv2.imwrite(path, image)
             # Print export to console
             print('Exported: ' + path)

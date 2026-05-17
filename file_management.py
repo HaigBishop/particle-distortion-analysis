@@ -17,7 +17,7 @@ import numpy as np
 import json
 from nptdms import TdmsFile
 from scipy.signal import savgol_filter, butter, filtfilt
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 import math
 
 # Get the path of the application
@@ -45,6 +45,43 @@ def resource_path(relative_path):
 def class_resource_path(self, relative_path):
     # Just wrap resource_path so it can be used in class methods
     return resource_path(relative_path)
+
+def open_file_dialog(on_selection, title, filters, multiple=True):
+    """Cross-platform file open dialog.
+    filters format: [("Label", "*.ext1", "*.ext2"), ...]
+    Uses NSOpenPanel (PyObjC) on macOS — tkinter conflicts with Kivy's SDL3 backend.
+    Uses plyer on Windows."""
+    if 'mac' in platform():
+        try:
+            from AppKit import NSOpenPanel
+            panel = NSOpenPanel.alloc().init()
+            panel.setTitle_(title)
+            panel.setCanChooseFiles_(True)
+            panel.setCanChooseDirectories_(False)
+            panel.setAllowsMultipleSelection_(multiple)
+            # Extract bare extensions from filter patterns (e.g. "*.avi" -> "avi")
+            exts = [p.lstrip('*.') for f in filters for p in f[1:] if p.lstrip('*.')]
+            print(f"open_file_dialog: showing panel, allowed extensions: {exts}")
+            if exts:
+                panel.setAllowedFileTypes_(exts)
+            result = panel.runModal()
+            print(f"open_file_dialog: runModal returned {result}")
+            if result:
+                paths = [url.path() for url in panel.URLs()]
+                print(f"open_file_dialog: selected paths: {paths}")
+                if paths:
+                    on_selection(paths)
+                else:
+                    print("open_file_dialog: runModal OK but no paths returned")
+            else:
+                print("open_file_dialog: dialog cancelled or failed to run (result=0)")
+        except Exception as e:
+            import traceback
+            print(f"open_file_dialog error: {e}")
+            print(traceback.format_exc())
+    else:
+        from plyer import filechooser
+        filechooser.open_file(on_selection=on_selection, title=title, filters=filters, multiple=multiple)
 
 def select_increment(value_range, num_labels):
     """num_labels must be > 1"""
@@ -496,9 +533,12 @@ def write_experiment_json(experiment, use_ion=True, overwrite_ok=False):
             # next ID
             i += 1
     # Construct dictionary
+    # The video filename may differ from experiment.name if the user renamed the experiment
+    video_file_name = os.path.splitext(os.path.basename(experiment.vid_loc))[0]
     data_dict = {
         'timestamp' : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         'name' : experiment.name,
+        'videoFileName' : video_file_name,
         'videoFileDirectory' : experiment.directory,
         'videoFileExtension': experiment.file_extension,
         'videoHeight' : experiment.shape[0], 
@@ -516,7 +556,7 @@ def write_experiment_json(experiment, use_ion=True, overwrite_ok=False):
         'events' : event_dictionaries,
     }
     # Make a file path (where video file is)
-    file_path = experiment.directory + '\\' + experiment.name + '.json'
+    file_path = os.path.join(experiment.directory, experiment.name + '.json')
     # If this path is okay
     if is_valid_json_path(file_path, overwrite_ok=overwrite_ok):
         # Write file
@@ -540,11 +580,13 @@ def load_experiment_json(json_file_loc):
     with open(json_file_loc, 'r') as json_file:
         data_dict = json.load(json_file)
 
-    # Get video file path
+    # Get video file path — use videoFileName if present (name may have been renamed by user)
     name = data_dict['name']
+    video_file_name = data_dict.get('videoFileName', name)
     directory = data_dict['videoFileDirectory']
     file_extension = data_dict['videoFileExtension']
-    vid_loc = os.path.join(directory, name + file_extension)
+    vid_loc = os.path.join(directory, video_file_name + file_extension)
+    print(f"load_experiment_json: looking for video at: {vid_loc}")
 
     # Is this video file legit?
     if is_video_file(vid_loc):
@@ -552,47 +594,25 @@ def load_experiment_json(json_file_loc):
         from jobs import Experiment # This prevents a circular import
         experiment = Experiment(vid_loc)
 
-        # Add ion file path to experiment object
-        ion_loc = data_dict['ionCurrentFile']
+        # Restore user-chosen name (may differ from video filename)
+        experiment.name = name
 
-        # If there is an ion file attached and it is legit
+        # Add ion file if present
+        ion_loc = data_dict['ionCurrentFile']
         if ion_loc is not None:
-            # Is this ion file legit?
             if is_ion_file(ion_loc):
-                # Load the ion current data
                 experiment.add_ion_file(ion_loc)
-                # Add the alignment of the current and the video file
                 experiment.ion_frame_range = data_dict['ionFrameRange']
             else:
-                # The ion file could not be read
                 errors.append('ion_read_fail')
-        # Extract all other data from the loaded dictionary
-        timestamp = datetime.strptime(data_dict['timestamp'], "%Y-%m-%d %H:%M:%S")
-        shape = (data_dict['videoHeight'], data_dict['videoWidth'])
-        num_frames = data_dict['numFrames']
-        vid_date = data_dict['videoDate']
-        ion_date = data_dict['ionDate']
-        ioncurr_len = data_dict['ionDataLength']
-        sample_freq = data_dict['ionSampleFrequency']
-        t_step = data_dict['ionTimeStep']
-        loop_factor = data_dict['ionLoopFactor']
-        
-        # Load event ranges (if any)
-        event_dicts = data_dict['events']
-        for event_dict in event_dicts:
-                # Add the frame range to the experiment object
-                start_frame = event_dict['startFrame']
-                end_frame = event_dict['endFrame']
-                experiment.event_ranges.append((start_frame, end_frame))
-                # Load all other data
-                event_id = event_dict['id']
-                num_frames_event = event_dict['numFrames']
-                ion_current_data = event_dict['ionCurrentData']
 
-        # Add the JSON file to the experiment
+        # Load event ranges
+        for event_dict in data_dict['events']:
+            experiment.event_ranges.append((event_dict['startFrame'], event_dict['endFrame']))
+
         experiment.json_file_loc = json_file_loc
     else:
-        # The video file could not be read
+        print(f"load_experiment_json: video file not readable: {vid_loc}")
         experiment = None
         errors.append('vid_read_fail')
     return experiment, errors
@@ -621,8 +641,8 @@ def is_experiment_json(file_loc):
             for key in required_event_keys:
                 if key not in event_dict:
                     return False
-            # Check if 'ionCurrentData' is a list
-            if not isinstance(event_dict['ionCurrentData'], list):
+            # ionCurrentData can be None (no ion data) or a list
+            if event_dict['ionCurrentData'] is not None and not isinstance(event_dict['ionCurrentData'], list):
                 return False
         return True
     # Error

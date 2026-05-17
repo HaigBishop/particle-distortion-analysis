@@ -11,7 +11,6 @@ from kivy.uix.screenmanager import Screen
 from kivy.clock import Clock
 
 # Import modules
-from plyer import filechooser
 import cv2
 from datetime import datetime
 import os
@@ -64,7 +63,7 @@ class TD3Window(Screen):
                     # Get the table of data
                     dataframe = event.get_distortion_data_for_export()
                     # Write the CSV file
-                    csv_file_loc = event.experiment.directory + '\\' + event.name + '_distortion.csv'
+                    csv_file_loc = os.path.join(event.experiment.directory, event.name + '_distortion.csv')
                     dataframe.to_csv(csv_file_loc, index=False)
                     # If we are updating the experiments JSON by adding tracking data to the events
                     if update_exp_json:
@@ -73,7 +72,7 @@ class TD3Window(Screen):
                         # Get the JSON path
                         json_path = experiment.json_file_loc
                         # Does the JSON file exist?
-                        if os.path.exists(json_path):
+                        if json_path is not None and os.path.exists(json_path):
                             # Load the JSON file
                             with open(json_path, 'r') as file:
                                 json_data = json.load(file)
@@ -96,11 +95,15 @@ class TD3Window(Screen):
                                 # Write the updated JSON back to file
                                 with open(json_path, 'w') as file:
                                     json.dump(json_data, file, indent=4)
+                        elif json_path is None:
+                            print('Skipping JSON update: no JSON file associated with experiment ' + experiment.name)
                         else:
                             print('JSON file does not exist: ' + json_path)
 
                 except Exception as e:
+                    import traceback
                     print("Event Export Error: " + str(e))
+                    print(traceback.format_exc())
                     # Add this event to be displayed to user
                     export_errors.append(" • " + event.name + "\n")
                     success = False
@@ -223,7 +226,7 @@ class TD3Window(Screen):
         current = self.app.current_event
         if current is not None:
             # Get the directory and name
-            directory = current.experiment.directory + '\\'
+            directory = current.experiment.directory
             name = current.name
             # Format the date and time as text
             now = datetime.now()
@@ -235,7 +238,7 @@ class TD3Window(Screen):
             # Get the image itself
             image = current.get_frame('current')
             # Combine all and write
-            path = directory + name + "_capture" + date_extension + ".png"
+            path = os.path.join(directory, name + "_capture" + date_extension + ".png")
             cv2.imwrite(path, image)
             # Print export to console
             print('Exported: ' + path)

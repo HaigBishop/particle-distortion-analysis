@@ -12,6 +12,7 @@ from kivy.app import App
 
 # Import modules
 import os
+from platform import platform
 from subprocess import Popen as p_open
 from scipy.signal import decimate
 import numpy as np
@@ -187,7 +188,10 @@ class ExperimentBox(Button):
         """Called by button on experiment box
         Opens the file/folder associated with the experiment"""
         # Open that folder in the explorer
-        p_open('explorer "' + str(self.experiment.directory) + '"')
+        if 'mac' in platform():
+            p_open(['open', str(self.experiment.directory)])
+        else:
+            p_open(['explorer', str(self.experiment.directory)])
 
 
 class ExperimentList(ScrollView):
@@ -707,8 +711,11 @@ class EventBox(Button):
         """Called by button on event box
         Opens the file/folder associated with the event"""
         # Open that folder in the explorer
-        p_open('explorer "' + str(self.experiment.directory) + '"')
-        
+        if 'mac' in platform():
+            p_open(['open', str(self.experiment.directory)])
+        else:
+            p_open(['explorer', str(self.experiment.directory)])
+
 
 class EventList(ScrollView):
     """scrolling widget which holds events"""

@@ -108,7 +108,7 @@ class IE3Window(Screen):
                 # Make pop up - alerts of issues data
                 popup = ErrorPopup()
                 # Adjust the text on the popup
-                popup.error_label.text = "Failed to write the JSON files for the following experiments:\n" + "".join(errors)
+                popup.error_label.text = "Failed to write the JSON files for the following experiments:\n" + "".join(export_errors)
                 popup.title = "Issues exporting JSON file(s)"
                 popup.open()
             # Clear all experiments boxes
@@ -724,7 +724,7 @@ class IE3Window(Screen):
         current = self.app.current_experiment
         if current is not None:
             # Get the directory and name
-            directory = current.directory + '\\'
+            directory = current.directory
             name = current.name
             # Format the date and time as text
             now = datetime.now()
@@ -736,7 +736,7 @@ class IE3Window(Screen):
             # Get the image itself
             image = current.get_frame(current.current_frame)
             # Combine all and write
-            path = directory + name + "_capture" + date_extension + ".png"
+            path = os.path.join(directory, name + "_capture" + date_extension + ".png")
             cv2.imwrite(path, image)
             # Print export to console
             print('Exported: ' + path)
